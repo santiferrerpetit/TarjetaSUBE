@@ -71,4 +71,40 @@ public class TarjetaTests
         Assert.That(resultado, Is.False);
         Assert.That(tarjeta.Saldo, Is.EqualTo(40000));
     }
+
+    [Test]
+    public void Descontar_RestaElMontoDelSaldoYDevuelveTrue_SiHaySaldoSuficiente()
+    {
+        var tarjeta = new Tarjeta();
+        tarjeta.Cargar(2000);
+
+        var resultado = tarjeta.Descontar(1580);
+
+        Assert.That(resultado, Is.True);
+        Assert.That(tarjeta.Saldo, Is.EqualTo(420));
+    }
+
+    [Test]
+    public void Descontar_DevuelveFalseYNoModificaElSaldo_SiElSaldoEsInsuficiente()
+    {
+        var tarjeta = new Tarjeta();
+        tarjeta.Cargar(2000);
+
+        var resultado = tarjeta.Descontar(3000);
+
+        Assert.That(resultado, Is.False);
+        Assert.That(tarjeta.Saldo, Is.EqualTo(2000));
+    }
+
+    [Test]
+    public void Descontar_PermiteDescontarElSaldoJusto()
+    {
+        var tarjeta = new Tarjeta();
+        tarjeta.Cargar(2000);
+
+        var resultado = tarjeta.Descontar(2000);
+
+        Assert.That(resultado, Is.True);
+        Assert.That(tarjeta.Saldo, Is.EqualTo(0));
+    }
 }
