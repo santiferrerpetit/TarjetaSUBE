@@ -1,3 +1,5 @@
+using TarjetaSube.Clases;
+
 namespace TarjetaSubeTest;
 
 public class TarjetaTests
@@ -12,22 +14,61 @@ public class TarjetaTests
     [TestCase(20000)]
     [TestCase(25000)]
     [TestCase(30000)]
-    public void Cargar_SumaElMontoAlSaldo(decimal monto)
+    public void Cargar_SumaElMontoAlSaldoYDevuelveTrue(decimal monto)
     {
-        var tarjeta = new TarjetaSube.Tarjeta();
+        var tarjeta = new Tarjeta();
 
-        tarjeta.Cargar(monto);
+        var resultado = tarjeta.Cargar(monto);
 
+        Assert.That(resultado, Is.True);
         Assert.That(tarjeta.Saldo, Is.EqualTo(monto));
     }
 
     [Test]
-    public void Cargar_RechazaUnMontoQueNoEstaEnLaListaDeCargasAceptadas()
+    public void Cargar_DevuelveFalseYNoModificaElSaldo_SiElMontoNoEstaEnLaListaDeCargasAceptadas()
     {
-        var tarjeta = new TarjetaSube.Tarjeta();
+        var tarjeta = new Tarjeta();
 
-        Assert.That(
-            () => tarjeta.Cargar(1000),
-            Throws.TypeOf<ArgumentException>());
+        var resultado = tarjeta.Cargar(1000);
+
+        Assert.That(resultado, Is.False);
+        Assert.That(tarjeta.Saldo, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void Cargar_DevuelveFalseYNoModificaElSaldo_SiSuperaElLimiteDe40000()
+    {
+        var tarjeta = new Tarjeta();
+        tarjeta.Cargar(30000);
+
+        var resultado = tarjeta.Cargar(15000);
+
+        Assert.That(resultado, Is.False);
+        Assert.That(tarjeta.Saldo, Is.EqualTo(30000));
+    }
+
+    [Test]
+    public void Cargar_PermiteLlegarJustoAlLimiteDe40000()
+    {
+        var tarjeta = new Tarjeta();
+        tarjeta.Cargar(30000);
+
+        var resultado = tarjeta.Cargar(10000);
+
+        Assert.That(resultado, Is.True);
+        Assert.That(tarjeta.Saldo, Is.EqualTo(40000));
+    }
+
+    [Test]
+    public void Cargar_DevuelveFalseYNoModificaElSaldo_SiYaEstaEnElLimiteDe40000()
+    {
+        var tarjeta = new Tarjeta();
+        tarjeta.Cargar(30000);
+        tarjeta.Cargar(10000);
+
+        var resultado = tarjeta.Cargar(2000);
+
+        Assert.That(resultado, Is.False);
+        Assert.That(tarjeta.Saldo, Is.EqualTo(40000));
     }
 }
