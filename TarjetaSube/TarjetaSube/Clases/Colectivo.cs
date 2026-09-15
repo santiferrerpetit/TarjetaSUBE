@@ -1,4 +1,4 @@
-namespace TarjetaSube;
+namespace TarjetaSube.Clases;
 
 public class Colectivo
 {

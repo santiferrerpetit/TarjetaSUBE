@@ -1,3 +1,3 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace TarjetaSube;
+namespace TarjetaSube.servicios;

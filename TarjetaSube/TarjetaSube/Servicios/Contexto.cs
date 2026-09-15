@@ -1,1 +1,1 @@
-namespace TarjetaSube;
+namespace TarjetaSube.servicios;
