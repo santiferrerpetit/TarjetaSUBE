@@ -5,7 +5,7 @@ public class Tarjeta
     private static readonly decimal[] CargasAceptadas =
         [2000, 3000, 4000, 5000, 8000, 10000, 15000, 20000, 25000, 30000];
 
-    private static readonly decimal SaldoMaximo = 40000;
+    private const decimal SaldoMaximo = 40000;
 
     public int Id { get; set; }
     public decimal Saldo { get; set; }
