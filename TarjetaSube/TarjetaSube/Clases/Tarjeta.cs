@@ -10,6 +10,11 @@ public class Tarjeta
 
     public int Id { get; set; }
     public decimal Saldo { get; set; }
+    public int TarjetaTipoId { get; set; } = TarjetaTipo.NormalId;
+    public TarjetaTipo? TarjetaTipo { get; set; }
+
+    public decimal CalcularPasaje(decimal tarifa) =>
+        (TarjetaTipo ?? TarjetaSube.Clases.TarjetaTipo.Normal).CalcularPasaje(tarifa);
 
     public bool Cargar(decimal monto)
     {

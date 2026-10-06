@@ -12,6 +12,7 @@ public class TarjetaSubeDbContext : DbContext
     public DbSet<Tarjeta> Tarjetas => Set<Tarjeta>();
     public DbSet<Colectivo> Colectivos => Set<Colectivo>();
     public DbSet<Boleto> Boletos => Set<Boleto>();
+    public DbSet<TarjetaTipo> TarjetaTipos => Set<TarjetaTipo>();
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -26,6 +27,18 @@ public class TarjetaSubeDbContext : DbContext
         modelBuilder.Entity<Tarjeta>()
             .Property(t => t.Saldo)
             .HasPrecision(18, 2);
+
+        modelBuilder.Entity<Tarjeta>()
+            .HasOne(t => t.TarjetaTipo)
+            .WithMany()
+            .HasForeignKey(t => t.TarjetaTipoId);
+
+        modelBuilder.Entity<TarjetaTipo>()
+            .Property(t => t.MultiplicadorTarifa)
+            .HasPrecision(5, 2);
+
+        modelBuilder.Entity<TarjetaTipo>()
+            .HasData(TarjetaTipo.Predefinidos);
 
         modelBuilder.Entity<Boleto>()
             .Property(b => b.Monto)

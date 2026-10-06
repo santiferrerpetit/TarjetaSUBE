@@ -79,4 +79,47 @@ public class ColectivoTests
         Assert.That(rechazado, Is.False);
         Assert.That(tarjeta.Saldo, Is.EqualTo(-1160));
     }
+
+    [Test]
+    public void PagarCon_FranquiciaCompleta_SiemprePuedePagar_AunSinSaldo()
+    {
+        var colectivo = new Colectivo();
+        var tarjeta = new Tarjeta { TarjetaTipo = TarjetaTipo.FranquiciaCompleta };
+
+        for (var i = 0; i < 10; i++)
+            Assert.That(colectivo.PagarCon(tarjeta), Is.True);
+
+        Assert.That(tarjeta.Saldo, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void PagarCon_FranquiciaCompleta_PagaAunConSaldoNegativoMaximo()
+    {
+        var colectivo = new Colectivo();
+        var tarjeta = new Tarjeta { Saldo = -2000, TarjetaTipo = TarjetaTipo.FranquiciaCompleta };
+
+        Assert.That(colectivo.PagarCon(tarjeta), Is.True);
+        Assert.That(tarjeta.Saldo, Is.EqualTo(-2000));
+    }
+
+    [Test]
+    public void PagarCon_MedioBoleto_PagaSiempreLaMitadDelNormal()
+    {
+        var colectivo = new Colectivo();
+        var normal = new Tarjeta { Saldo = 10000 };
+        var medio = new Tarjeta { Saldo = 10000, TarjetaTipo = TarjetaTipo.MedioBoletoEstudiantil };
+
+        for (var i = 0; i < 3; i++)
+        {
+            var saldoNormal = normal.Saldo;
+            var saldoMedio = medio.Saldo;
+
+            colectivo.PagarCon(normal);
+            colectivo.PagarCon(medio);
+
+            Assert.That(saldoMedio - medio.Saldo, Is.EqualTo((saldoNormal - normal.Saldo) / 2));
+        }
+
+        Assert.That(medio.Saldo, Is.EqualTo(10000 - 3 * 790));
+    }
 }

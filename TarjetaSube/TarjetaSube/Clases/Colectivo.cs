@@ -9,6 +9,6 @@ public class Colectivo
 
     public bool PagarCon(Tarjeta tarjeta)
     {
-        return tarjeta.Descontar(Tarifa);
+        return tarjeta.Descontar(tarjeta.CalcularPasaje(Tarifa));
     }
 }
