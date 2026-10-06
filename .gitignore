@@ -1,0 +1,21 @@
+## .NET
+bin/
+obj/
+
+## Visual Studio
+.vs/
+*.user
+*.suo
+
+## Claude Code local settings
+.claude/settings.local.json
+
+## Base de datos local (SQLite)
+*.db
+*.db-shm
+*.db-wal
+
+## Docs internos (specs/planes de trabajo)
+docs/
+
+
