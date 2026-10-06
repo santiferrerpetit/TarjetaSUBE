@@ -6,26 +6,17 @@ public class Colectivo
     public string Linea { get; set; } = string.Empty;
 
     private const int Tarifa = 1580;
-    public Boleto PagarCon(Tarjeta tarjeta)
+
+    public Boleto? PagarCon(Tarjeta tarjeta)
     {
-        if (tarjeta.Saldo >= Tarifa)
-        {
-            tarjeta.Saldo -= Tarifa;
+        if (!tarjeta.Descontar(Tarifa))
+            return null;
 
-            Console.WriteLine("Pago aceptado, disfrute su viaje.");
-            Console.WriteLine($"Su saldo es de {tarjeta.Saldo}");
-            return new Boleto
-            {
-                Monto = Tarifa,
-                Tarjeta = tarjeta,
-                Colectivo = this
-            };
-        }
-        else
+        return new Boleto
         {
-        throw new ArgumentException("Saldo insuficiente, cargue la tarjeta e intente de nuevo");    
-        }
-
-        
+            Monto = Tarifa,
+            Tarjeta = tarjeta,
+            Colectivo = this
+        };
     }
 }

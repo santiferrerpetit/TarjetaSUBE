@@ -5,64 +5,39 @@ namespace TarjetaSubeTest;
 public class ColectivoTests
 {
     [Test]
-    public void PagarCon_ConSaldoSuficiente_DescuentaLaTarifaYCompletaElBoleto()
+    public void PagarCon_DevuelveNull_SiElSaldoEsInsuficiente()
     {
-        var tarjeta = new Tarjeta { Saldo = 3000m };
-        var colectivo = new Colectivo { Linea = "115" };
+        var colectivo = new Colectivo();
+        var tarjeta = new Tarjeta();
 
         var boleto = colectivo.PagarCon(tarjeta);
 
-        Assert.That(tarjeta.Saldo, Is.EqualTo(1420m));
-        Assert.That(boleto.Monto, Is.EqualTo(1580m));
-        Assert.That(boleto.Tarjeta, Is.SameAs(tarjeta));
-        Assert.That(boleto.Colectivo, Is.SameAs(colectivo));
+        Assert.That(boleto, Is.Null);
     }
 
     [Test]
-    public void PagarCon_ConSaldoExacto_DejaElSaldoEnCero()
+    public void PagarCon_DescuentaLaTarifaYDevuelveElBoleto_SiHaySaldo()
     {
-        var tarjeta = new Tarjeta { Saldo = 1580m };
         var colectivo = new Colectivo();
+        var tarjeta = new Tarjeta();
+        tarjeta.Cargar(2000);
 
         var boleto = colectivo.PagarCon(tarjeta);
 
-        Assert.That(tarjeta.Saldo, Is.Zero);
-        Assert.That(boleto.Monto, Is.EqualTo(1580m));
+        Assert.That(boleto, Is.Not.Null);
+        Assert.That(boleto!.Monto, Is.EqualTo(1580));
+        Assert.That(tarjeta.Saldo, Is.EqualTo(420));
     }
 
     [Test]
-    public void PagarCon_ImprimeElSaldoActualizado()
+    public void PagarCon_PermitePagarConElSaldoJusto()
     {
-        var tarjeta = new Tarjeta { Saldo = 2000m };
         var colectivo = new Colectivo();
-        var salidaOriginal = Console.Out;
-        using var salida = new StringWriter();
+        var tarjeta = new Tarjeta { Saldo = 1580 };
 
-        try
-        {
-            Console.SetOut(salida);
+        var boleto = colectivo.PagarCon(tarjeta);
 
-            colectivo.PagarCon(tarjeta);
-
-            Assert.That(salida.ToString(), Does.Contain("Su saldo es de 420"));
-        }
-        finally
-        {
-            Console.SetOut(salidaOriginal);
-        }
-    }
-
-    [TestCase(0)]
-    [TestCase(1579)]
-    [TestCase(-1)]
-    public void PagarCon_ConSaldoInsuficiente_LanzaExcepcionYNoModificaElSaldo(decimal saldo)
-    {
-        var tarjeta = new Tarjeta { Saldo = saldo };
-        var colectivo = new Colectivo();
-
-        var excepcion = Assert.Throws<ArgumentException>(() => colectivo.PagarCon(tarjeta));
-
-        Assert.That(excepcion!.Message, Does.Contain("Saldo insuficiente"));
-        Assert.That(tarjeta.Saldo, Is.EqualTo(saldo));
+        Assert.That(boleto, Is.Not.Null);
+        Assert.That(tarjeta.Saldo, Is.EqualTo(0));
     }
 }

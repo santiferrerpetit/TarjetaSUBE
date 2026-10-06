@@ -21,4 +21,13 @@ public class Tarjeta
         Saldo += monto;
         return true;
     }
+
+    public bool Descontar(decimal monto)
+    {
+        if (Saldo < monto)
+            return false;
+
+        Saldo -= monto;
+        return true;
+    }
 } 
