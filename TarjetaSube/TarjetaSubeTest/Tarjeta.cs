@@ -90,7 +90,7 @@ public class TarjetaTests
         var tarjeta = new Tarjeta();
         tarjeta.Cargar(2000);
 
-        var resultado = tarjeta.Descontar(3000);
+        var resultado = tarjeta.Descontar(4500);
 
         Assert.That(resultado, Is.False);
         Assert.That(tarjeta.Saldo, Is.EqualTo(2000));
@@ -106,5 +106,38 @@ public class TarjetaTests
 
         Assert.That(resultado, Is.True);
         Assert.That(tarjeta.Saldo, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void Descontar_PermiteQuedarConSaldoNegativoHastaElLimite()
+    {
+        var tarjeta = new Tarjeta { Saldo = 1000 };
+
+        var resultado = tarjeta.Descontar(3000);
+
+        Assert.That(resultado, Is.True);
+        Assert.That(tarjeta.Saldo, Is.EqualTo(-2000));
+    }
+
+    [Test]
+    public void Descontar_NoPermiteQuedarPorDebajoDelSaldoNegativoMaximo()
+    {
+        var tarjeta = new Tarjeta { Saldo = 1000 };
+
+        var resultado = tarjeta.Descontar(3001);
+
+        Assert.That(resultado, Is.False);
+        Assert.That(tarjeta.Saldo, Is.EqualTo(1000));
+    }
+
+    [Test]
+    public void Cargar_DescuentaDelSaldoLoConsumidoEnViajesPlus()
+    {
+        var tarjeta = new Tarjeta { Saldo = -1160 };
+
+        var resultado = tarjeta.Cargar(2000);
+
+        Assert.That(resultado, Is.True);
+        Assert.That(tarjeta.Saldo, Is.EqualTo(840));
     }
 }
