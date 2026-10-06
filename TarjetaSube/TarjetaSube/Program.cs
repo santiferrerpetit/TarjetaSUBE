@@ -28,10 +28,8 @@ void CargarYMostrar(Tarjeta t, decimal monto)
 
 void PagarYMostrar(Colectivo c, Tarjeta t)
 {
-    var boleto = c.PagarCon(t);
-
-    if (boleto is not null)
-        Console.WriteLine($"Boleto emitido: {boleto.Monto:C}. Saldo restante: {t.Saldo:C}");
+    if (c.PagarCon(t))
+        Console.WriteLine($"Pago aceptado. Saldo restante: {t.Saldo:C}");
     else
         Console.WriteLine($"Pago rechazado. Saldo insuficiente: {t.Saldo:C}");
 }
