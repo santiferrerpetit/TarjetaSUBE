@@ -40,4 +40,28 @@ public class ColectivoTests
         Assert.That(boleto, Is.Not.Null);
         Assert.That(tarjeta.Saldo, Is.EqualTo(0));
     }
+
+    [Test]
+    public void PagarCon_NoModificaElSaldo_SiElSaldoEsInsuficiente()
+    {
+        var colectivo = new Colectivo();
+        var tarjeta = new Tarjeta { Saldo = 1000 };
+
+        var boleto = colectivo.PagarCon(tarjeta);
+
+        Assert.That(boleto, Is.Null);
+        Assert.That(tarjeta.Saldo, Is.EqualTo(1000));
+    }
+
+    [Test]
+    public void PagarCon_DescuentaLaTarifaEnCadaViaje()
+    {
+        var colectivo = new Colectivo();
+        var tarjeta = new Tarjeta { Saldo = 5000 };
+
+        colectivo.PagarCon(tarjeta);
+        colectivo.PagarCon(tarjeta);
+
+        Assert.That(tarjeta.Saldo, Is.EqualTo(1840));
+    }
 }
