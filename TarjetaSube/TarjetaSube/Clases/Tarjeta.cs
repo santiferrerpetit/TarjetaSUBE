@@ -6,6 +6,7 @@ public class Tarjeta
         [2000, 3000, 4000, 5000, 8000, 10000, 15000, 20000, 25000, 30000];
 
     private const decimal SaldoMaximo = 40000;
+    private const decimal SaldoNegativoMaximo = -2000;
 
     public int Id { get; set; }
     public decimal Saldo { get; set; }
@@ -24,7 +25,7 @@ public class Tarjeta
 
     public bool Descontar(decimal monto)
     {
-        if (Saldo < monto)
+        if (Saldo - monto < SaldoNegativoMaximo)
             return false;
 
         Saldo -= monto;
