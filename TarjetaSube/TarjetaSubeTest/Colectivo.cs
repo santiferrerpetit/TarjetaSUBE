@@ -5,27 +5,26 @@ namespace TarjetaSubeTest;
 public class ColectivoTests
 {
     [Test]
-    public void PagarCon_DevuelveNull_SiElSaldoEsInsuficiente()
+    public void PagarCon_DevuelveFalse_SiElSaldoEsInsuficiente()
     {
         var colectivo = new Colectivo();
         var tarjeta = new Tarjeta();
 
-        var boleto = colectivo.PagarCon(tarjeta);
+        var resultado = colectivo.PagarCon(tarjeta);
 
-        Assert.That(boleto, Is.Null);
+        Assert.That(resultado, Is.False);
     }
 
     [Test]
-    public void PagarCon_DescuentaLaTarifaYDevuelveElBoleto_SiHaySaldo()
+    public void PagarCon_DescuentaLaTarifaYDevuelveTrue_SiHaySaldo()
     {
         var colectivo = new Colectivo();
         var tarjeta = new Tarjeta();
         tarjeta.Cargar(2000);
 
-        var boleto = colectivo.PagarCon(tarjeta);
+        var resultado = colectivo.PagarCon(tarjeta);
 
-        Assert.That(boleto, Is.Not.Null);
-        Assert.That(boleto!.Monto, Is.EqualTo(1580));
+        Assert.That(resultado, Is.True);
         Assert.That(tarjeta.Saldo, Is.EqualTo(420));
     }
 
@@ -35,9 +34,9 @@ public class ColectivoTests
         var colectivo = new Colectivo();
         var tarjeta = new Tarjeta { Saldo = 1580 };
 
-        var boleto = colectivo.PagarCon(tarjeta);
+        var resultado = colectivo.PagarCon(tarjeta);
 
-        Assert.That(boleto, Is.Not.Null);
+        Assert.That(resultado, Is.True);
         Assert.That(tarjeta.Saldo, Is.EqualTo(0));
     }
 
@@ -47,9 +46,9 @@ public class ColectivoTests
         var colectivo = new Colectivo();
         var tarjeta = new Tarjeta { Saldo = 1000 };
 
-        var boleto = colectivo.PagarCon(tarjeta);
+        var resultado = colectivo.PagarCon(tarjeta);
 
-        Assert.That(boleto, Is.Null);
+        Assert.That(resultado, Is.False);
         Assert.That(tarjeta.Saldo, Is.EqualTo(1000));
     }
 
