@@ -140,4 +140,28 @@ public class TarjetaTests
         Assert.That(resultado, Is.True);
         Assert.That(tarjeta.Saldo, Is.EqualTo(840));
     }
+
+    [Test]
+    public void TarjetaNueva_EsDeTipoNormal()
+    {
+        var tarjeta = new Tarjeta();
+
+        Assert.That(tarjeta.TarjetaTipoId, Is.EqualTo(TarjetaTipo.NormalId));
+    }
+
+    [Test]
+    public void CalcularPasaje_SinTipoAsignado_CobraTarifaNormal()
+    {
+        var tarjeta = new Tarjeta();
+
+        Assert.That(tarjeta.CalcularPasaje(1580), Is.EqualTo(1580));
+    }
+
+    [Test]
+    public void CalcularPasaje_UsaElTipoAsignado()
+    {
+        var tarjeta = new Tarjeta { TarjetaTipo = TarjetaTipo.MedioBoletoEstudiantil };
+
+        Assert.That(tarjeta.CalcularPasaje(1580), Is.EqualTo(790));
+    }
 }

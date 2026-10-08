@@ -122,4 +122,14 @@ public class ColectivoTests
 
         Assert.That(medio.Saldo, Is.EqualTo(10000 - 3 * 790));
     }
+
+    [Test]
+    public void PagarCon_BoletoGratuitoEstudiantil_NoDescuentaSaldo()
+    {
+        var colectivo = new Colectivo();
+        var tarjeta = new Tarjeta { Saldo = 500, TarjetaTipo = TarjetaTipo.BoletoGratuitoEstudiantil };
+
+        Assert.That(colectivo.PagarCon(tarjeta), Is.True);
+        Assert.That(tarjeta.Saldo, Is.EqualTo(500));
+    }
 }
