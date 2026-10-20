@@ -103,24 +103,26 @@ public class ColectivoTests
     }
 
     [Test]
-    public void PagarCon_MedioBoleto_PagaSiempreLaMitadDelNormal()
+    public void PagarCon_MedioBoleto_PagaLaMitadDelNormalEnLosPrimerosDosViajes()
     {
-        var colectivo = new Colectivo();
+        var reloj = new RelojFalso(new DateTimeOffset(2026, 1, 5, 10, 0, 0, TimeSpan.Zero));
+        var colectivo = new Colectivo { Tiempo = reloj };
         var normal = new Tarjeta { Saldo = 10000 };
         var medio = new Tarjeta { Saldo = 10000, TarjetaTipo = TarjetaTipo.MedioBoletoEstudiantil };
 
-        for (var i = 0; i < 3; i++)
+        for (var i = 0; i < 2; i++)
         {
             var saldoNormal = normal.Saldo;
             var saldoMedio = medio.Saldo;
 
             colectivo.PagarCon(normal);
             colectivo.PagarCon(medio);
+            reloj.Avanzar(TimeSpan.FromMinutes(5));
 
             Assert.That(saldoMedio - medio.Saldo, Is.EqualTo((saldoNormal - normal.Saldo) / 2));
         }
 
-        Assert.That(medio.Saldo, Is.EqualTo(10000 - 3 * 790));
+        Assert.That(medio.Saldo, Is.EqualTo(10000 - 2 * 790));
     }
 
     [Test]
@@ -131,5 +133,38 @@ public class ColectivoTests
 
         Assert.That(colectivo.PagarCon(tarjeta), Is.True);
         Assert.That(tarjeta.Saldo, Is.EqualTo(500));
+    }
+
+    [Test]
+    public void PagarCon_MedioBoleto_RechazaViajeAntesDeLos5Minutos()
+    {
+        var reloj = new RelojFalso(new DateTimeOffset(2026, 1, 5, 10, 0, 0, TimeSpan.Zero));
+        var colectivo = new Colectivo { Tiempo = reloj };
+        var tarjeta = new Tarjeta { Saldo = 10000, TarjetaTipo = TarjetaTipo.MedioBoletoEstudiantil };
+
+        Assert.That(colectivo.PagarCon(tarjeta), Is.True);
+
+        reloj.Avanzar(TimeSpan.FromMinutes(4));
+        Assert.That(colectivo.PagarCon(tarjeta), Is.False);
+        Assert.That(tarjeta.Saldo, Is.EqualTo(10000 - 790));
+
+        reloj.Avanzar(TimeSpan.FromMinutes(1));
+        Assert.That(colectivo.PagarCon(tarjeta), Is.True);
+    }
+
+    [Test]
+    public void PagarCon_MedioBoleto_TercerViajeDelDiaCobraTarifaCompleta()
+    {
+        var reloj = new RelojFalso(new DateTimeOffset(2026, 1, 5, 10, 0, 0, TimeSpan.Zero));
+        var colectivo = new Colectivo { Tiempo = reloj };
+        var tarjeta = new Tarjeta { Saldo = 10000, TarjetaTipo = TarjetaTipo.MedioBoletoEstudiantil };
+
+        for (var i = 0; i < 3; i++)
+        {
+            Assert.That(colectivo.PagarCon(tarjeta), Is.True);
+            reloj.Avanzar(TimeSpan.FromMinutes(5));
+        }
+
+        Assert.That(tarjeta.Saldo, Is.EqualTo(10000 - 790 - 790 - 1580));
     }
 }
