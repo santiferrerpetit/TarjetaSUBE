@@ -31,6 +31,22 @@ reloj.Avanzar(TimeSpan.FromDays(1));
 Console.WriteLine("(paso un dia)"); // un dia mas
 PagarConHora(colectivoMedio, medio, reloj, 0);  // dia nuevo ahora vuelve a ser de790
 
+Console.WriteLine();
+Console.WriteLine("Boleto gratuito : ");
+
+var relojGratuito = new RelojManual(new DateTimeOffset(2026, 1, 5, 10, 0, 0, TimeSpan.Zero));
+var colectivoGratuito = new Colectivo { Linea = "115A", Tiempo = relojGratuito };
+var gratuito = new Tarjeta { TarjetaTipo = TarjetaTipo.BoletoGratuitoEstudiantil };
+gratuito.Cargar(10000);
+
+PagarConHora(colectivoGratuito, gratuito, relojGratuito, 0); //gratis
+PagarConHora(colectivoGratuito, gratuito, relojGratuito, 1); //es gratis el 2do
+PagarConHora(colectivoGratuito, gratuito, relojGratuito, 1); 
+PagarConHora(colectivoGratuito, gratuito, relojGratuito, 1);  
+relojGratuito.Avanzar(TimeSpan.FromDays(1));
+Console.WriteLine("(paso un dia)"); // un dia mas
+PagarConHora(colectivoGratuito, gratuito, relojGratuito, 0); // new day gratis today
+
 void CargarYMostrar(Tarjeta t, decimal monto)
 {
     if (t.Cargar(monto))
