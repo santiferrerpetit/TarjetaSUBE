@@ -132,4 +132,16 @@ public class ColectivoTests
         Assert.That(colectivo.PagarCon(tarjeta), Is.True);
         Assert.That(tarjeta.Saldo, Is.EqualTo(500));
     }
+
+    [Test]
+    public void PagarCon_LuegoDelViajeRecargaElPendienteHastaElMaximo()
+    {
+        var colectivo = new Colectivo();
+        var tarjeta = new Tarjeta { Saldo = 56000, SaldoPendiente = 3000 };
+
+        colectivo.PagarCon(tarjeta);
+
+        Assert.That(tarjeta.Saldo, Is.EqualTo(56000));
+        Assert.That(tarjeta.SaldoPendiente, Is.EqualTo(1420));
+    }
 }
