@@ -41,7 +41,11 @@ public class TarjetaSubeDbContext : DbContext
             .HasData(TarjetaTipo.Predefinidos);
 
         modelBuilder.Entity<Boleto>()
-            .Property(b => b.Monto)
+            .Property(b => b.TotalAbonado)
+            .HasPrecision(18, 2);
+
+        modelBuilder.Entity<Boleto>()
+            .Property(b => b.Saldo)
             .HasPrecision(18, 2);
     }
 }
