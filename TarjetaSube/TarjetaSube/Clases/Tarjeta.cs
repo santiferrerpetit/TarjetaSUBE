@@ -16,6 +16,8 @@ public class Tarjeta
     public decimal CalcularPasaje(decimal tarifa) =>
         (TarjetaTipo ?? TarjetaSube.Clases.TarjetaTipo.Normal).CalcularPasaje(tarifa);
 
+    public string NombreTipo => (TarjetaTipo ?? TarjetaSube.Clases.TarjetaTipo.Normal).Nombre;
+
     public bool Cargar(decimal monto)
     {
         if (!CargasAceptadas.Contains(monto))
