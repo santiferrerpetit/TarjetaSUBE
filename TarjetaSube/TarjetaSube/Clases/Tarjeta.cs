@@ -20,7 +20,9 @@ public class Tarjeta
     
     public DateTime? UltimoViaje { get; set; }
     public int ViajesMedioBoletoHoy { get; set; }
+    public int ViajesGratuitosHoy { get; set; }
     public bool EsMedioBoleto => (TarjetaTipo ?? TarjetaSube.Clases.TarjetaTipo.Normal).Id == TarjetaSube.Clases.TarjetaTipo.MedioBoletoEstudiantilId;
+    public bool EsBoletoGratuito => (TarjetaTipo ?? TarjetaSube.Clases.TarjetaTipo.Normal).Id == TarjetaSube.Clases.TarjetaTipo.BoletoGratuitoEstudiantilId;
     public bool Cargar(decimal monto)
     {
         if (!CargasAceptadas.Contains(monto))

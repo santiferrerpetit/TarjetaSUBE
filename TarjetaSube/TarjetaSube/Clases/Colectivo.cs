@@ -31,6 +31,15 @@ public class Colectivo
                 monto = Tarifa;
         }
 
+        if (tarjeta.EsBoletoGratuito)
+        {
+            if (tarjeta.UltimoViaje?.Date != ahora.Date)
+                tarjeta.ViajesGratuitosHoy = 0;
+
+            if (tarjeta.ViajesGratuitosHoy >= 2)
+                monto = Tarifa;
+        }
+
         if (!tarjeta.Descontar(monto))
             return null;
 
@@ -38,6 +47,12 @@ public class Colectivo
         {
             tarjeta.UltimoViaje = ahora;
             tarjeta.ViajesMedioBoletoHoy++;
+        }
+
+        if (tarjeta.EsBoletoGratuito)
+        {
+            tarjeta.UltimoViaje = ahora;
+            tarjeta.ViajesGratuitosHoy++;
         }
 
         return new Boleto

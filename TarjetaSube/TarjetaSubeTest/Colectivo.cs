@@ -167,4 +167,47 @@ public class ColectivoTests
 
         Assert.That(tarjeta.Saldo, Is.EqualTo(10000 - 790 - 790 - 1580));
     }
+
+    [Test]
+    public void PagarCon_BoletoGratuito_PermiteDosViajesGratisPorDia()
+    {
+        var reloj = new RelojFalso(new DateTimeOffset(2026, 1, 5, 10, 0, 0, TimeSpan.Zero));
+        var colectivo = new Colectivo { Tiempo = reloj };
+        var tarjeta = new Tarjeta { Saldo = 10000, TarjetaTipo = TarjetaTipo.BoletoGratuitoEstudiantil };
+
+        Assert.That(colectivo.PagarCon(tarjeta), Is.True);
+        Assert.That(colectivo.PagarCon(tarjeta), Is.True);
+
+        Assert.That(tarjeta.Saldo, Is.EqualTo(10000));
+    }
+
+    [Test]
+    public void PagarCon_BoletoGratuito_ViajesPosterioresAlSegundoCobranTarifaCompleta()
+    {
+        var reloj = new RelojFalso(new DateTimeOffset(2026, 1, 5, 10, 0, 0, TimeSpan.Zero));
+        var colectivo = new Colectivo { Tiempo = reloj };
+        var tarjeta = new Tarjeta { Saldo = 10000, TarjetaTipo = TarjetaTipo.BoletoGratuitoEstudiantil };
+
+        colectivo.PagarCon(tarjeta);
+        colectivo.PagarCon(tarjeta);
+        colectivo.PagarCon(tarjeta);
+        colectivo.PagarCon(tarjeta);
+
+        Assert.That(tarjeta.Saldo, Is.EqualTo(10000 - 1580 - 1580));
+    }
+
+    [Test]
+    public void PagarCon_BoletoGratuito_ReiniciaElContadorAlDiaSiguiente()
+    {
+        var reloj = new RelojFalso(new DateTimeOffset(2026, 1, 5, 10, 0, 0, TimeSpan.Zero));
+        var colectivo = new Colectivo { Tiempo = reloj };
+        var tarjeta = new Tarjeta { Saldo = 10000, TarjetaTipo = TarjetaTipo.BoletoGratuitoEstudiantil };
+
+        colectivo.PagarCon(tarjeta);
+        colectivo.PagarCon(tarjeta);
+        reloj.Avanzar(TimeSpan.FromDays(1));
+        colectivo.PagarCon(tarjeta);
+
+        Assert.That(tarjeta.Saldo, Is.EqualTo(10000));
+    }
 }
