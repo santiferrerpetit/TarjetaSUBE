@@ -17,7 +17,10 @@ public class Tarjeta
         (TarjetaTipo ?? TarjetaSube.Clases.TarjetaTipo.Normal).CalcularPasaje(tarifa);
 
     public string NombreTipo => (TarjetaTipo ?? TarjetaSube.Clases.TarjetaTipo.Normal).Nombre;
-
+    
+    public DateTime? UltimoViaje { get; set; }
+    public int ViajesMedioBoletoHoy { get; set; }
+    public bool EsMedioBoleto => (TarjetaTipo ?? TarjetaSube.Clases.TarjetaTipo.Normal).Id == TarjetaSube.Clases.TarjetaTipo.MedioBoletoEstudiantilId;
     public bool Cargar(decimal monto)
     {
         if (!CargasAceptadas.Contains(monto))

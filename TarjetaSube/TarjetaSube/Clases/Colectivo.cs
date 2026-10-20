@@ -17,12 +17,32 @@ public class Colectivo
     public Boleto? EmitirBoleto(Tarjeta tarjeta)
     {
         var monto = tarjeta.CalcularPasaje(Tarifa);
+        var ahora = Tiempo.GetLocalNow().DateTime;
+
+        if (tarjeta.EsMedioBoleto)
+        {
+            if (tarjeta.UltimoViaje?.Date != ahora.Date)
+                tarjeta.ViajesMedioBoletoHoy = 0;
+
+            if (tarjeta.UltimoViaje is { } ultimo && ahora - ultimo < TimeSpan.FromMinutes(5))
+                return null;
+
+            if (tarjeta.ViajesMedioBoletoHoy >= 2)
+                monto = Tarifa;
+        }
+
         if (!tarjeta.Descontar(monto))
             return null;
 
+        if (tarjeta.EsMedioBoleto)
+        {
+            tarjeta.UltimoViaje = ahora;
+            tarjeta.ViajesMedioBoletoHoy++;
+        }
+
         return new Boleto
         {
-            Fecha = Tiempo.GetLocalNow().DateTime,
+            Fecha = ahora,
             TipoTarjeta = tarjeta.NombreTipo,
             Linea = Linea,
             TotalAbonado = monto,
