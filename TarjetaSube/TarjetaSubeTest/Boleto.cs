@@ -1,4 +1,6 @@
+using Microsoft.EntityFrameworkCore;
 using TarjetaSube.Clases;
+using TarjetaSube.Servicios;
 
 namespace TarjetaSubeTest;
 
@@ -84,5 +86,142 @@ public class BoletoTests
     public void Tarjeta_NombreTipo_SinTipoAsignadoEsNormal()
     {
         Assert.That(new Tarjeta().NombreTipo, Is.EqualTo("Normal"));
+    }
+
+    [TestCase(TarjetaTipo.NormalId, "Normal")]
+    [TestCase(TarjetaTipo.MedioBoletoEstudiantilId, "Medio boleto estudiantil")]
+    [TestCase(TarjetaTipo.BoletoGratuitoEstudiantilId, "Boleto gratuito estudiantil")]
+    [TestCase(TarjetaTipo.FranquiciaCompletaId, "Franquicia completa")]
+    public void Tarjeta_NombreTipo_DevuelveElNombreDelTipoAsignado(int tipoId, string esperado)
+    {
+        var tipo = TarjetaTipo.Predefinidos.Single(t => t.Id == tipoId);
+        var tarjeta = new Tarjeta { TarjetaTipo = tipo };
+
+        Assert.That(tarjeta.NombreTipo, Is.EqualTo(esperado));
+    }
+
+    [Test]
+    public void Boleto_NuevoTieneValoresPorDefecto()
+    {
+        var boleto = new Boleto();
+
+        Assert.That(boleto.TipoTarjeta, Is.Empty);
+        Assert.That(boleto.Linea, Is.Empty);
+        Assert.That(boleto.TotalAbonado, Is.EqualTo(0));
+        Assert.That(boleto.Saldo, Is.EqualTo(0));
+        Assert.That(boleto.IdTarjeta, Is.EqualTo(0));
+        Assert.That(boleto.Tarjeta, Is.Null);
+        Assert.That(boleto.Colectivo, Is.Null);
+    }
+
+    [Test]
+    public void Colectivo_NuevoUsaElRelojDelSistemaPorDefecto()
+    {
+        Assert.That(new Colectivo().Tiempo, Is.SameAs(TimeProvider.System));
+    }
+
+    [Test]
+    public void EmitirBoleto_RelacionaElBoletoConLaTarjetaYElColectivo()
+    {
+        var colectivo = NuevoColectivo();
+        var tarjeta = new Tarjeta { Saldo = 5000 };
+
+        var boleto = colectivo.EmitirBoleto(tarjeta);
+
+        Assert.That(boleto!.Tarjeta, Is.SameAs(tarjeta));
+        Assert.That(boleto.Colectivo, Is.SameAs(colectivo));
+    }
+
+    [Test]
+    public void EmitirBoleto_UsaLaFechaDelReloj_YCambiaConElTiempo()
+    {
+        var reloj = new RelojFalso(Ahora);
+        var colectivo = new Colectivo { Linea = "K", Tiempo = reloj };
+        var tarjeta = new Tarjeta { Saldo = 10000 };
+
+        var primero = colectivo.EmitirBoleto(tarjeta);
+        reloj.Avanzar(TimeSpan.FromMinutes(10));
+        var segundo = colectivo.EmitirBoleto(tarjeta);
+
+        Assert.That(primero!.Fecha, Is.EqualTo(Ahora.DateTime));
+        Assert.That(segundo!.Fecha, Is.EqualTo(Ahora.DateTime.AddMinutes(10)));
+    }
+
+    [Test]
+    public void EmitirBoleto_ElSaldoDelBoletoCoincideConElDeLaTarjeta()
+    {
+        var colectivo = NuevoColectivo();
+        var tarjeta = new Tarjeta { Saldo = 5000 };
+
+        var primero = colectivo.EmitirBoleto(tarjeta);
+        var segundo = colectivo.EmitirBoleto(tarjeta);
+
+        Assert.That(primero!.Saldo, Is.EqualTo(3420));
+        Assert.That(segundo!.Saldo, Is.EqualTo(1840));
+        Assert.That(tarjeta.Saldo, Is.EqualTo(segundo.Saldo));
+    }
+
+    [Test]
+    public void EmitirBoleto_ConSaldoNegativoPrevio_InformaElSaldoRestanteNegativo()
+    {
+        var tarjeta = new Tarjeta { Saldo = -100 };
+
+        var boleto = NuevoColectivo().EmitirBoleto(tarjeta);
+
+        Assert.That(boleto!.TotalAbonado, Is.EqualTo(1580));
+        Assert.That(boleto.Saldo, Is.EqualTo(-1680));
+    }
+
+    [Test]
+    public void EmitirBoleto_SiNoSePuedePagar_NoModificaElSaldo()
+    {
+        var tarjeta = new Tarjeta { Saldo = -1000 };
+
+        NuevoColectivo().EmitirBoleto(tarjeta);
+
+        Assert.That(tarjeta.Saldo, Is.EqualTo(-1000));
+    }
+
+    [Test]
+    public void PagarCon_DevuelveTrueSiSeEmiteBoleto_YFalseSiNo()
+    {
+        var colectivo = NuevoColectivo();
+
+        Assert.That(colectivo.PagarCon(new Tarjeta { Saldo = 2000 }), Is.True);
+        Assert.That(colectivo.PagarCon(new Tarjeta { Saldo = -2000 }), Is.False);
+    }
+
+    [Test]
+    public void Boleto_SePersisteConTodosSusDatos()
+    {
+        var opciones = new DbContextOptionsBuilder<TarjetaSubeDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+        var boleto = new Boleto
+        {
+            Fecha = Ahora.DateTime,
+            TipoTarjeta = "Normal",
+            Linea = "144 Negro",
+            TotalAbonado = 1580,
+            Saldo = 3420,
+            IdTarjeta = 7
+        };
+
+        using (var db = new TarjetaSubeDbContext(opciones))
+        {
+            db.Boletos.Add(boleto);
+            db.SaveChanges();
+        }
+
+        using (var db = new TarjetaSubeDbContext(opciones))
+        {
+            var guardado = db.Boletos.Single();
+            Assert.That(guardado.Fecha, Is.EqualTo(Ahora.DateTime));
+            Assert.That(guardado.TipoTarjeta, Is.EqualTo("Normal"));
+            Assert.That(guardado.Linea, Is.EqualTo("144 Negro"));
+            Assert.That(guardado.TotalAbonado, Is.EqualTo(1580));
+            Assert.That(guardado.Saldo, Is.EqualTo(3420));
+            Assert.That(guardado.IdTarjeta, Is.EqualTo(7));
+        }
     }
 }
