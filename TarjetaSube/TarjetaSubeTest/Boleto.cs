@@ -168,8 +168,48 @@ public class BoletoTests
 
         var boleto = NuevoColectivo().EmitirBoleto(tarjeta);
 
+        Assert.That(boleto!.Saldo, Is.EqualTo(-1680));
+    }
+
+    [Test]
+    public void EmitirBoleto_ConSaldoNegativoPrevio_InformaTarifaMasLoAdeudado()
+    {
+        var tarjeta = new Tarjeta { Saldo = -100 };
+
+        var boleto = NuevoColectivo().EmitirBoleto(tarjeta);
+
+        Assert.That(boleto!.TotalAbonado, Is.EqualTo(1680));
+        Assert.That(boleto.TotalAbonado, Is.GreaterThan(1580));
+    }
+
+    [Test]
+    public void EmitirBoleto_SinSaldoNegativoPrevio_NoSumaDeuda()
+    {
+        var tarjeta = new Tarjeta { Saldo = 1000 };
+
+        var boleto = NuevoColectivo().EmitirBoleto(tarjeta);
+
         Assert.That(boleto!.TotalAbonado, Is.EqualTo(1580));
-        Assert.That(boleto.Saldo, Is.EqualTo(-1680));
+    }
+
+    [Test]
+    public void EmitirBoleto_MedioBoletoConSaldoNegativoPrevio_SumaLaDeudaALaMitad()
+    {
+        var tarjeta = new Tarjeta { Saldo = -500, TarjetaTipo = TarjetaTipo.MedioBoletoEstudiantil };
+
+        var boleto = NuevoColectivo().EmitirBoleto(tarjeta);
+
+        Assert.That(boleto!.TotalAbonado, Is.EqualTo(790 + 500));
+    }
+
+    [Test]
+    public void EmitirBoleto_FranquiciaGratuitaConSaldoNegativo_NoSumaDeuda()
+    {
+        var tarjeta = new Tarjeta { Saldo = -500, TarjetaTipo = TarjetaTipo.FranquiciaCompleta };
+
+        var boleto = NuevoColectivo().EmitirBoleto(tarjeta);
+
+        Assert.That(boleto!.TotalAbonado, Is.EqualTo(0));
     }
 
     [Test]

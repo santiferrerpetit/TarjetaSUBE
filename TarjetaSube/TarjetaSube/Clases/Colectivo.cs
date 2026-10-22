@@ -40,6 +40,8 @@ public class Colectivo
                 monto = Tarifa;
         }
 
+        var deudaPrevia = monto > 0 ? Math.Max(0, -tarjeta.Saldo) : 0;
+
         if (!tarjeta.Descontar(monto))
             return null;
 
@@ -60,7 +62,7 @@ public class Colectivo
             Fecha = ahora,
             TipoTarjeta = tarjeta.NombreTipo,
             Linea = Linea,
-            TotalAbonado = monto,
+            TotalAbonado = monto + deudaPrevia,
             Saldo = tarjeta.Saldo,
             IdTarjeta = tarjeta.Id,
             Tarjeta = tarjeta,
