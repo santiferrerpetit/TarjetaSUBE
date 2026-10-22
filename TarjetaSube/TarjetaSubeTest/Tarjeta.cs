@@ -206,4 +206,79 @@ public class TarjetaTests
 
         Assert.That(tarjeta.CalcularPasaje(1580), Is.EqualTo(790));
     }
+
+    [Test]
+    public void Cargar_VariasCargasConExcedenteAcumulanElPendiente()
+    {
+        var tarjeta = new Tarjeta { Saldo = 55000 };
+
+        tarjeta.Cargar(5000);
+        tarjeta.Cargar(3000);
+
+        Assert.That(tarjeta.Saldo, Is.EqualTo(56000));
+        Assert.That(tarjeta.SaldoPendiente, Is.EqualTo(7000));
+    }
+
+    [Test]
+    public void Cargar_MontoInvalido_NoModificaElSaldoPendiente()
+    {
+        var tarjeta = new Tarjeta { Saldo = 56000, SaldoPendiente = 1000 };
+
+        Assert.That(tarjeta.Cargar(1234), Is.False);
+        Assert.That(tarjeta.SaldoPendiente, Is.EqualTo(1000));
+    }
+
+    [Test]
+    public void AcreditarCarga_SiElSaldoYaEstaEnElMaximo_NoAcreditaNada()
+    {
+        var tarjeta = new Tarjeta { Saldo = 56000, SaldoPendiente = 2000 };
+
+        tarjeta.AcreditarCarga();
+
+        Assert.That(tarjeta.Saldo, Is.EqualTo(56000));
+        Assert.That(tarjeta.SaldoPendiente, Is.EqualTo(2000));
+    }
+
+    [Test]
+    public void AcreditarCarga_ConSaldoNegativo_SumaElPendienteAlSaldo()
+    {
+        var tarjeta = new Tarjeta { Saldo = -500, SaldoPendiente = 2000 };
+
+        tarjeta.AcreditarCarga();
+
+        Assert.That(tarjeta.Saldo, Is.EqualTo(1500));
+        Assert.That(tarjeta.SaldoPendiente, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void Descontar_Rechazado_NoAcreditaElPendiente()
+    {
+        var tarjeta = new Tarjeta { Saldo = -1500, SaldoPendiente = 3000 };
+
+        Assert.That(tarjeta.Descontar(1000), Is.False);
+        Assert.That(tarjeta.Saldo, Is.EqualTo(-1500));
+        Assert.That(tarjeta.SaldoPendiente, Is.EqualTo(3000));
+    }
+
+    [Test]
+    public void Descontar_AcreditaSoloLoQueEntraYDejaElRestoPendiente()
+    {
+        var tarjeta = new Tarjeta { Saldo = 56000, SaldoPendiente = 5000 };
+
+        tarjeta.Descontar(1000);
+
+        Assert.That(tarjeta.Saldo, Is.EqualTo(56000));
+        Assert.That(tarjeta.SaldoPendiente, Is.EqualTo(4000));
+    }
+
+    [Test]
+    public void Descontar_ConPendienteMenorAlEspacio_AcreditaTodoElPendiente()
+    {
+        var tarjeta = new Tarjeta { Saldo = 50000, SaldoPendiente = 2000 };
+
+        tarjeta.Descontar(1000);
+
+        Assert.That(tarjeta.Saldo, Is.EqualTo(51000));
+        Assert.That(tarjeta.SaldoPendiente, Is.EqualTo(0));
+    }
 }
