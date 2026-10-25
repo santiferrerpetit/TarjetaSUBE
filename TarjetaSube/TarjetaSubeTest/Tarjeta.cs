@@ -108,22 +108,22 @@ public class TarjetaTests
     {
         var tarjeta = new Tarjeta { Saldo = 56000, SaldoPendiente = 4000 };
 
-        tarjeta.Descontar(1580);
+        tarjeta.Descontar(2150);
 
         Assert.That(tarjeta.Saldo, Is.EqualTo(56000));
-        Assert.That(tarjeta.SaldoPendiente, Is.EqualTo(2420));
+        Assert.That(tarjeta.SaldoPendiente, Is.EqualTo(1850));
     }
 
     [Test]
     public void Descontar_RestaElMontoDelSaldoYDevuelveTrue_SiHaySaldoSuficiente()
     {
         var tarjeta = new Tarjeta();
-        tarjeta.Cargar(2000);
+        tarjeta.Cargar(3000);
 
-        var resultado = tarjeta.Descontar(1580);
+        var resultado = tarjeta.Descontar(2150);
 
         Assert.That(resultado, Is.True);
-        Assert.That(tarjeta.Saldo, Is.EqualTo(420));
+        Assert.That(tarjeta.Saldo, Is.EqualTo(850));
     }
 
     [Test]
@@ -196,7 +196,7 @@ public class TarjetaTests
     {
         var tarjeta = new Tarjeta();
 
-        Assert.That(tarjeta.CalcularPasaje(1580), Is.EqualTo(1580));
+        Assert.That(tarjeta.CalcularPasaje(2150), Is.EqualTo(2150));
     }
 
     [Test]
@@ -204,7 +204,7 @@ public class TarjetaTests
     {
         var tarjeta = new Tarjeta { TarjetaTipo = TarjetaTipo.MedioBoletoEstudiantil };
 
-        Assert.That(tarjeta.CalcularPasaje(1580), Is.EqualTo(790));
+        Assert.That(tarjeta.CalcularPasaje(2150), Is.EqualTo(1075));
     }
 
     [Test]

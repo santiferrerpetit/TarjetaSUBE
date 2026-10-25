@@ -4,10 +4,10 @@ namespace TarjetaSubeTest;
 
 public class TarjetaTipoTests
 {
-    [TestCase(TarjetaTipo.NormalId, 1580, 1580)]
-    [TestCase(TarjetaTipo.MedioBoletoEstudiantilId, 1580, 790)]
-    [TestCase(TarjetaTipo.BoletoGratuitoEstudiantilId, 1580, 0)]
-    [TestCase(TarjetaTipo.FranquiciaCompletaId, 1580, 0)]
+    [TestCase(TarjetaTipo.NormalId, 2150, 2150)]
+    [TestCase(TarjetaTipo.MedioBoletoEstudiantilId, 2150, 1075)]
+    [TestCase(TarjetaTipo.BoletoGratuitoEstudiantilId, 2150, 0)]
+    [TestCase(TarjetaTipo.FranquiciaCompletaId, 2150, 0)]
     public void CalcularPasaje_AplicaElMultiplicadorDelTipo(int id, decimal tarifa, decimal esperado)
     {
         var tipo = TarjetaTipo.Predefinidos.Single(t => t.Id == id);
