@@ -11,6 +11,8 @@ public class Colectivo
     public TimeProvider Tiempo { get; set; } = TimeProvider.System;
 
     private const int Tarifa = 2150;
+    private const int HoraInicioFranquicias = 6;
+    private const int HoraFinFranquicias = 22;
     private const int ViajesParaDescuentoMedio = 30;
     private const int ViajesParaDescuentoMaximo = 80;
     private const decimal MultiplicadorDescuentoMedio = 0.8m;
@@ -22,6 +24,9 @@ public class Colectivo
     {
         var monto = tarjeta.CalcularPasaje(Tarifa);
         var ahora = Tiempo.GetLocalNow().DateTime;
+
+        if (!tarjeta.EsNormal && !EnHorarioDeFranquicia(ahora))
+            return null;
 
         if (tarjeta.EsMedioBoleto)
         {
@@ -95,4 +100,9 @@ public class Colectivo
         >= ViajesParaDescuentoMedio => MultiplicadorDescuentoMedio,
         _ => 1m
     };
+
+    private static bool EnHorarioDeFranquicia(DateTime fecha) =>
+        fecha.DayOfWeek is >= DayOfWeek.Monday and <= DayOfWeek.Friday
+        && fecha.Hour >= HoraInicioFranquicias
+        && fecha.Hour < HoraFinFranquicias;
 }

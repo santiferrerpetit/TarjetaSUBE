@@ -83,7 +83,7 @@ public class ColectivoTests
     [Test]
     public void PagarCon_FranquiciaCompleta_SiemprePuedePagar_AunSinSaldo()
     {
-        var colectivo = new Colectivo();
+        var colectivo = ColectivoEn(2026, 1, 5, 10);
         var tarjeta = new Tarjeta { TarjetaTipo = TarjetaTipo.FranquiciaCompleta };
 
         for (var i = 0; i < 10; i++)
@@ -95,7 +95,7 @@ public class ColectivoTests
     [Test]
     public void PagarCon_FranquiciaCompleta_PagaAunConSaldoNegativoMaximo()
     {
-        var colectivo = new Colectivo();
+        var colectivo = ColectivoEn(2026, 1, 5, 10);
         var tarjeta = new Tarjeta { Saldo = -2000, TarjetaTipo = TarjetaTipo.FranquiciaCompleta };
 
         Assert.That(colectivo.PagarCon(tarjeta), Is.True);
@@ -128,7 +128,7 @@ public class ColectivoTests
     [Test]
     public void PagarCon_BoletoGratuitoEstudiantil_NoDescuentaSaldo()
     {
-        var colectivo = new Colectivo();
+        var colectivo = ColectivoEn(2026, 1, 5, 10);
         var tarjeta = new Tarjeta { Saldo = 500, TarjetaTipo = TarjetaTipo.BoletoGratuitoEstudiantil };
 
         Assert.That(colectivo.PagarCon(tarjeta), Is.True);
@@ -382,5 +382,137 @@ public class ColectivoTests
 
         Assert.That(boleto!.TotalAbonado, Is.EqualTo(1720));
         Assert.That(boleto.Saldo, Is.EqualTo(56000 - 1720));
+    }
+
+    private static Colectivo ColectivoEn(int anio, int mes, int dia, int hora, int minuto = 0) =>
+        new() { Tiempo = new RelojFalso(new DateTimeOffset(anio, mes, dia, hora, minuto, 0, TimeSpan.Zero)) };
+
+    private static readonly int[] TiposConFranquicia =
+    [
+        TarjetaTipo.MedioBoletoEstudiantilId,
+        TarjetaTipo.BoletoGratuitoEstudiantilId,
+        TarjetaTipo.FranquiciaCompletaId
+    ];
+
+    private static Tarjeta TarjetaDeTipo(int tipoId) => new()
+    {
+        Saldo = 10000,
+        TarjetaTipo = TarjetaTipo.Predefinidos.Single(t => t.Id == tipoId)
+    };
+
+    // 2026-10-05 es lunes, 2026-10-09 viernes, 2026-10-10 sábado y 2026-10-11 domingo.
+
+    [Test]
+    public void PagarCon_Franquicia_PuedePagarDeLunesAViernesEntreLas6Y22([Values(5, 6, 7, 8, 9)] int dia,
+        [Values(6, 12, 21)] int hora,
+        [ValueSource(nameof(TiposConFranquicia))] int tipoId)
+    {
+        var colectivo = ColectivoEn(2026, 10, dia, hora);
+
+        Assert.That(colectivo.PagarCon(TarjetaDeTipo(tipoId)), Is.True);
+    }
+
+    [Test]
+    public void PagarCon_Franquicia_PuedePagarALas21Y59([ValueSource(nameof(TiposConFranquicia))] int tipoId)
+    {
+        var colectivo = ColectivoEn(2026, 10, 5, 21, 59);
+
+        Assert.That(colectivo.PagarCon(TarjetaDeTipo(tipoId)), Is.True);
+    }
+
+    [Test]
+    public void PagarCon_Franquicia_PuedePagarALas6EnPunto([ValueSource(nameof(TiposConFranquicia))] int tipoId)
+    {
+        var colectivo = ColectivoEn(2026, 10, 5, 6, 0);
+
+        Assert.That(colectivo.PagarCon(TarjetaDeTipo(tipoId)), Is.True);
+    }
+
+    [Test]
+    public void PagarCon_Franquicia_NoPuedePagarALas22EnPunto([ValueSource(nameof(TiposConFranquicia))] int tipoId)
+    {
+        var colectivo = ColectivoEn(2026, 10, 5, 22, 0);
+
+        Assert.That(colectivo.PagarCon(TarjetaDeTipo(tipoId)), Is.False);
+    }
+
+    [Test]
+    public void PagarCon_Franquicia_NoPuedePagarALas5Y59([ValueSource(nameof(TiposConFranquicia))] int tipoId)
+    {
+        var colectivo = ColectivoEn(2026, 10, 5, 5, 59);
+
+        Assert.That(colectivo.PagarCon(TarjetaDeTipo(tipoId)), Is.False);
+    }
+
+    [Test]
+    public void PagarCon_Franquicia_NoPuedePagarDeNoche([Values(0, 3, 5, 22, 23)] int hora,
+        [ValueSource(nameof(TiposConFranquicia))] int tipoId)
+    {
+        var colectivo = ColectivoEn(2026, 10, 6, hora);
+
+        Assert.That(colectivo.PagarCon(TarjetaDeTipo(tipoId)), Is.False);
+    }
+
+    [Test]
+    public void PagarCon_Franquicia_NoPuedePagarSabadoNiDomingo([Values(10, 11)] int dia,
+        [Values(0, 6, 10, 15, 21, 23)] int hora,
+        [ValueSource(nameof(TiposConFranquicia))] int tipoId)
+    {
+        var colectivo = ColectivoEn(2026, 10, dia, hora);
+
+        Assert.That(colectivo.PagarCon(TarjetaDeTipo(tipoId)), Is.False);
+    }
+
+    [Test]
+    public void EmitirBoleto_Franquicia_FueraDeHorarioNoEmiteBoletoNiModificaLaTarjeta(
+        [ValueSource(nameof(TiposConFranquicia))] int tipoId)
+    {
+        var colectivo = ColectivoEn(2026, 10, 10, 12);
+        var tarjeta = TarjetaDeTipo(tipoId);
+
+        var boleto = colectivo.EmitirBoleto(tarjeta);
+
+        Assert.That(boleto, Is.Null);
+        Assert.That(tarjeta.Saldo, Is.EqualTo(10000));
+        Assert.That(tarjeta.UltimoViaje, Is.Null);
+        Assert.That(tarjeta.ViajesMedioBoletoHoy, Is.EqualTo(0));
+        Assert.That(tarjeta.ViajesGratuitosHoy, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void PagarCon_FranquiciaCompleta_FueraDeHorarioNoPuedePagarAunConSaldo()
+    {
+        var colectivo = ColectivoEn(2026, 10, 11, 12);
+        var tarjeta = new Tarjeta { Saldo = 50000, TarjetaTipo = TarjetaTipo.FranquiciaCompleta };
+
+        Assert.That(colectivo.PagarCon(tarjeta), Is.False);
+    }
+
+    [Test]
+    public void PagarCon_Franquicia_VuelveAPoderPagarAlEntrarEnLaFranja()
+    {
+        var reloj = new RelojFalso(new DateTimeOffset(2026, 10, 5, 5, 0, 0, TimeSpan.Zero));
+        var colectivo = new Colectivo { Tiempo = reloj };
+        var tarjeta = TarjetaDeTipo(TarjetaTipo.BoletoGratuitoEstudiantilId);
+
+        Assert.That(colectivo.PagarCon(tarjeta), Is.False);
+
+        reloj.Avanzar(TimeSpan.FromHours(1));
+
+        Assert.That(colectivo.PagarCon(tarjeta), Is.True);
+    }
+
+    [TestCase(5, 6)]
+    [TestCase(5, 12)]
+    [TestCase(5, 21)]
+    [TestCase(10, 12)]
+    [TestCase(11, 3)]
+    [TestCase(6, 23)]
+    public void PagarCon_TarjetaNormal_PuedePagarEnCualquierDiaYHorario(int dia, int hora)
+    {
+        var colectivo = ColectivoEn(2026, 10, dia, hora);
+        var tarjeta = new Tarjeta { Saldo = 5000 };
+
+        Assert.That(colectivo.PagarCon(tarjeta), Is.True);
     }
 }
