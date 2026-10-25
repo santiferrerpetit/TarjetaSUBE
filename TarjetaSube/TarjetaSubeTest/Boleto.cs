@@ -23,8 +23,8 @@ public class BoletoTests
         Assert.That(boleto!.Fecha, Is.EqualTo(Ahora.DateTime));
         Assert.That(boleto.TipoTarjeta, Is.EqualTo("Normal"));
         Assert.That(boleto.Linea, Is.EqualTo("144 Negro"));
-        Assert.That(boleto.TotalAbonado, Is.EqualTo(1580));
-        Assert.That(boleto.Saldo, Is.EqualTo(3420));
+        Assert.That(boleto.TotalAbonado, Is.EqualTo(2150));
+        Assert.That(boleto.Saldo, Is.EqualTo(2850));
         Assert.That(boleto.IdTarjeta, Is.EqualTo(7));
     }
 
@@ -36,8 +36,8 @@ public class BoletoTests
         var boleto = NuevoColectivo().EmitirBoleto(tarjeta);
 
         Assert.That(boleto!.TipoTarjeta, Is.EqualTo("Medio boleto estudiantil"));
-        Assert.That(boleto.TotalAbonado, Is.EqualTo(790));
-        Assert.That(boleto.Saldo, Is.EqualTo(4210));
+        Assert.That(boleto.TotalAbonado, Is.EqualTo(1075));
+        Assert.That(boleto.Saldo, Is.EqualTo(3925));
     }
 
     [Test]
@@ -70,8 +70,8 @@ public class BoletoTests
 
         var boleto = NuevoColectivo().EmitirBoleto(tarjeta);
 
-        Assert.That(boleto!.TotalAbonado, Is.EqualTo(1580));
-        Assert.That(boleto.Saldo, Is.EqualTo(-580));
+        Assert.That(boleto!.TotalAbonado, Is.EqualTo(2150));
+        Assert.That(boleto.Saldo, Is.EqualTo(-1150));
     }
 
     [Test]
@@ -156,30 +156,30 @@ public class BoletoTests
         var primero = colectivo.EmitirBoleto(tarjeta);
         var segundo = colectivo.EmitirBoleto(tarjeta);
 
-        Assert.That(primero!.Saldo, Is.EqualTo(3420));
-        Assert.That(segundo!.Saldo, Is.EqualTo(1840));
+        Assert.That(primero!.Saldo, Is.EqualTo(2850));
+        Assert.That(segundo!.Saldo, Is.EqualTo(700));
         Assert.That(tarjeta.Saldo, Is.EqualTo(segundo.Saldo));
     }
 
     [Test]
     public void EmitirBoleto_ConSaldoNegativoPrevio_InformaElSaldoRestanteNegativo()
     {
-        var tarjeta = new Tarjeta { Saldo = -100 };
+        var tarjeta = new Tarjeta { Saldo = -100, TarjetaTipo = TarjetaTipo.MedioBoletoEstudiantil };
 
         var boleto = NuevoColectivo().EmitirBoleto(tarjeta);
 
-        Assert.That(boleto!.Saldo, Is.EqualTo(-1680));
+        Assert.That(boleto!.Saldo, Is.EqualTo(-1175));
     }
 
     [Test]
     public void EmitirBoleto_ConSaldoNegativoPrevio_InformaTarifaMasLoAdeudado()
     {
-        var tarjeta = new Tarjeta { Saldo = -100 };
+        var tarjeta = new Tarjeta { Saldo = -100, TarjetaTipo = TarjetaTipo.MedioBoletoEstudiantil };
 
         var boleto = NuevoColectivo().EmitirBoleto(tarjeta);
 
-        Assert.That(boleto!.TotalAbonado, Is.EqualTo(1680));
-        Assert.That(boleto.TotalAbonado, Is.GreaterThan(1580));
+        Assert.That(boleto!.TotalAbonado, Is.EqualTo(1175));
+        Assert.That(boleto.TotalAbonado, Is.GreaterThan(1075));
     }
 
     [Test]
@@ -189,7 +189,7 @@ public class BoletoTests
 
         var boleto = NuevoColectivo().EmitirBoleto(tarjeta);
 
-        Assert.That(boleto!.TotalAbonado, Is.EqualTo(1580));
+        Assert.That(boleto!.TotalAbonado, Is.EqualTo(2150));
     }
 
     [Test]
@@ -199,7 +199,7 @@ public class BoletoTests
 
         var boleto = NuevoColectivo().EmitirBoleto(tarjeta);
 
-        Assert.That(boleto!.TotalAbonado, Is.EqualTo(790 + 500));
+        Assert.That(boleto!.TotalAbonado, Is.EqualTo(1075 + 500));
     }
 
     [Test]
@@ -242,8 +242,8 @@ public class BoletoTests
             Fecha = Ahora.DateTime,
             TipoTarjeta = "Normal",
             Linea = "144 Negro",
-            TotalAbonado = 1580,
-            Saldo = 3420,
+            TotalAbonado = 2150,
+            Saldo = 2850,
             IdTarjeta = 7
         };
 
@@ -259,8 +259,8 @@ public class BoletoTests
             Assert.That(guardado.Fecha, Is.EqualTo(Ahora.DateTime));
             Assert.That(guardado.TipoTarjeta, Is.EqualTo("Normal"));
             Assert.That(guardado.Linea, Is.EqualTo("144 Negro"));
-            Assert.That(guardado.TotalAbonado, Is.EqualTo(1580));
-            Assert.That(guardado.Saldo, Is.EqualTo(3420));
+            Assert.That(guardado.TotalAbonado, Is.EqualTo(2150));
+            Assert.That(guardado.Saldo, Is.EqualTo(2850));
             Assert.That(guardado.IdTarjeta, Is.EqualTo(7));
         }
     }

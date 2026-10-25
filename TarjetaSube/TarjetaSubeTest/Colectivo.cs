@@ -20,19 +20,19 @@ public class ColectivoTests
     {
         var colectivo = new Colectivo();
         var tarjeta = new Tarjeta();
-        tarjeta.Cargar(2000);
+        tarjeta.Cargar(3000);
 
         var resultado = colectivo.PagarCon(tarjeta);
 
         Assert.That(resultado, Is.True);
-        Assert.That(tarjeta.Saldo, Is.EqualTo(420));
+        Assert.That(tarjeta.Saldo, Is.EqualTo(850));
     }
 
     [Test]
     public void PagarCon_PermitePagarConElSaldoJusto()
     {
         var colectivo = new Colectivo();
-        var tarjeta = new Tarjeta { Saldo = 1580 };
+        var tarjeta = new Tarjeta { Saldo = 2150 };
 
         var resultado = colectivo.PagarCon(tarjeta);
 
@@ -61,14 +61,14 @@ public class ColectivoTests
         colectivo.PagarCon(tarjeta);
         colectivo.PagarCon(tarjeta);
 
-        Assert.That(tarjeta.Saldo, Is.EqualTo(1840));
+        Assert.That(tarjeta.Saldo, Is.EqualTo(700));
     }
 
     [Test]
     public void PagarCon_PermiteViajesPlusYDescuentaElSaldoCorrectamente()
     {
         var colectivo = new Colectivo();
-        var tarjeta = new Tarjeta { Saldo = 2000 };
+        var tarjeta = new Tarjeta { Saldo = 3000 };
 
         var primero = colectivo.PagarCon(tarjeta);
         var plus = colectivo.PagarCon(tarjeta);
@@ -77,7 +77,7 @@ public class ColectivoTests
         Assert.That(primero, Is.True);
         Assert.That(plus, Is.True);
         Assert.That(rechazado, Is.False);
-        Assert.That(tarjeta.Saldo, Is.EqualTo(-1160));
+        Assert.That(tarjeta.Saldo, Is.EqualTo(-1300));
     }
 
     [Test]
@@ -122,7 +122,7 @@ public class ColectivoTests
             Assert.That(saldoMedio - medio.Saldo, Is.EqualTo((saldoNormal - normal.Saldo) / 2));
         }
 
-        Assert.That(medio.Saldo, Is.EqualTo(10000 - 2 * 790));
+        Assert.That(medio.Saldo, Is.EqualTo(10000 - 2 * 1075));
     }
 
     [Test]
@@ -146,7 +146,7 @@ public class ColectivoTests
 
         reloj.Avanzar(TimeSpan.FromMinutes(4));
         Assert.That(colectivo.PagarCon(tarjeta), Is.False);
-        Assert.That(tarjeta.Saldo, Is.EqualTo(10000 - 790));
+        Assert.That(tarjeta.Saldo, Is.EqualTo(10000 - 1075));
 
         reloj.Avanzar(TimeSpan.FromMinutes(1));
         Assert.That(colectivo.PagarCon(tarjeta), Is.True);
@@ -165,7 +165,7 @@ public class ColectivoTests
             reloj.Avanzar(TimeSpan.FromMinutes(5));
         }
 
-        Assert.That(tarjeta.Saldo, Is.EqualTo(10000 - 790 - 790 - 1580));
+        Assert.That(tarjeta.Saldo, Is.EqualTo(10000 - 1075 - 1075 - 2150));
     }
 
     [Test]
@@ -193,7 +193,7 @@ public class ColectivoTests
         colectivo.PagarCon(tarjeta);
         colectivo.PagarCon(tarjeta);
 
-        Assert.That(tarjeta.Saldo, Is.EqualTo(10000 - 1580 - 1580));
+        Assert.That(tarjeta.Saldo, Is.EqualTo(10000 - 2150 - 2150));
     }
 
     [Test]
@@ -220,6 +220,6 @@ public class ColectivoTests
         colectivo.PagarCon(tarjeta);
 
         Assert.That(tarjeta.Saldo, Is.EqualTo(56000));
-        Assert.That(tarjeta.SaldoPendiente, Is.EqualTo(1420));
+        Assert.That(tarjeta.SaldoPendiente, Is.EqualTo(850));
     }
 }

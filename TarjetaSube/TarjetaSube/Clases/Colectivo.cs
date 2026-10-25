@@ -10,7 +10,7 @@ public class Colectivo
     [NotMapped]
     public TimeProvider Tiempo { get; set; } = TimeProvider.System;
 
-    private const int Tarifa = 1580;
+    private const int Tarifa = 2150;
 
     public bool PagarCon(Tarjeta tarjeta) => EmitirBoleto(tarjeta) != null;
 
