@@ -11,6 +11,10 @@ public class Colectivo
     public TimeProvider Tiempo { get; set; } = TimeProvider.System;
 
     private const int Tarifa = 2150;
+    private const int ViajesParaDescuentoMedio = 30;
+    private const int ViajesParaDescuentoMaximo = 80;
+    private const decimal MultiplicadorDescuentoMedio = 0.8m;
+    private const decimal MultiplicadorDescuentoMaximo = 0.75m;
 
     public bool PagarCon(Tarjeta tarjeta) => EmitirBoleto(tarjeta) != null;
 
@@ -40,10 +44,25 @@ public class Colectivo
                 monto = Tarifa;
         }
 
+        if (tarjeta.EsNormal)
+        {
+            var mes = new DateTime(ahora.Year, ahora.Month, 1);
+            if (tarjeta.MesViajesFrecuentes != mes)
+            {
+                tarjeta.MesViajesFrecuentes = mes;
+                tarjeta.ViajesDelMes = 0;
+            }
+
+            monto *= MultiplicadorUsoFrecuente(tarjeta.ViajesDelMes + 1);
+        }
+
         var deudaPrevia = monto > 0 ? Math.Max(0, -tarjeta.Saldo) : 0;
 
         if (!tarjeta.Descontar(monto))
             return null;
+
+        if (tarjeta.EsNormal)
+            tarjeta.ViajesDelMes++;
 
         if (tarjeta.EsMedioBoleto)
         {
@@ -69,4 +88,11 @@ public class Colectivo
             Colectivo = this
         };
     }
+
+    private static decimal MultiplicadorUsoFrecuente(int viaje) => viaje switch
+    {
+        >= ViajesParaDescuentoMaximo => MultiplicadorDescuentoMaximo,
+        >= ViajesParaDescuentoMedio => MultiplicadorDescuentoMedio,
+        _ => 1m
+    };
 }

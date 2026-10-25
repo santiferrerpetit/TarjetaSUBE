@@ -222,4 +222,165 @@ public class ColectivoTests
         Assert.That(tarjeta.Saldo, Is.EqualTo(56000));
         Assert.That(tarjeta.SaldoPendiente, Is.EqualTo(850));
     }
+
+    private static (Colectivo colectivo, Tarjeta tarjeta, RelojFalso reloj) UsoFrecuente(
+        int viajesPrevios, TarjetaTipo? tipo = null)
+    {
+        var reloj = new RelojFalso(new DateTimeOffset(2026, 10, 5, 10, 0, 0, TimeSpan.Zero));
+        var colectivo = new Colectivo { Tiempo = reloj };
+        var tarjeta = new Tarjeta
+        {
+            Saldo = 56000,
+            TarjetaTipo = tipo,
+            MesViajesFrecuentes = new DateTime(2026, 10, 1),
+            ViajesDelMes = viajesPrevios
+        };
+        return (colectivo, tarjeta, reloj);
+    }
+
+    [TestCase(0, 2150)]
+    [TestCase(27, 2150)]
+    [TestCase(28, 2150)]
+    [TestCase(29, 1720)]
+    [TestCase(30, 1720)]
+    [TestCase(77, 1720)]
+    [TestCase(78, 1720)]
+    [TestCase(79, 1612.5)]
+    [TestCase(80, 1612.5)]
+    [TestCase(200, 1612.5)]
+    public void EmitirBoleto_UsoFrecuente_AplicaElDescuentoSegunLaCantidadDeViajesDelMes(int viajesPrevios, double esperado)
+    {
+        var (colectivo, tarjeta, _) = UsoFrecuente(viajesPrevios);
+
+        var boleto = colectivo.EmitirBoleto(tarjeta);
+
+        Assert.That(boleto!.TotalAbonado, Is.EqualTo((decimal)esperado));
+        Assert.That(tarjeta.Saldo, Is.EqualTo(56000 - (decimal)esperado));
+    }
+
+    [Test]
+    public void PagarCon_CuentaLosViajesDelMesDeLaTarjetaNormal()
+    {
+        var (colectivo, tarjeta, _) = UsoFrecuente(0);
+
+        for (var i = 0; i < 3; i++)
+            colectivo.PagarCon(tarjeta);
+
+        Assert.That(tarjeta.ViajesDelMes, Is.EqualTo(3));
+    }
+
+    [Test]
+    public void PagarCon_ElViaje30DelMesTieneDescuentoDel20PorCiento()
+    {
+        var (colectivo, tarjeta, _) = UsoFrecuente(0);
+        tarjeta.Saldo = 100000;
+
+        for (var i = 0; i < 29; i++)
+            colectivo.PagarCon(tarjeta);
+        var saldoAntes = tarjeta.Saldo;
+        colectivo.PagarCon(tarjeta);
+
+        Assert.That(saldoAntes - tarjeta.Saldo, Is.EqualTo(1720));
+        Assert.That(tarjeta.ViajesDelMes, Is.EqualTo(30));
+    }
+
+    [Test]
+    public void PagarCon_ElViaje80DelMesTieneDescuentoDel25PorCiento()
+    {
+        var (colectivo, tarjeta, _) = UsoFrecuente(78);
+
+        colectivo.PagarCon(tarjeta);
+        var saldoAntes = tarjeta.Saldo;
+        colectivo.PagarCon(tarjeta);
+
+        Assert.That(saldoAntes - tarjeta.Saldo, Is.EqualTo(1612.5m));
+        Assert.That(tarjeta.ViajesDelMes, Is.EqualTo(80));
+    }
+
+    [Test]
+    public void EmitirBoleto_UsoFrecuente_ReiniciaLaCuentaAlCambiarDeMes()
+    {
+        var (colectivo, tarjeta, reloj) = UsoFrecuente(100);
+        reloj.Avanzar(TimeSpan.FromDays(31));
+
+        var boleto = colectivo.EmitirBoleto(tarjeta);
+
+        Assert.That(boleto!.TotalAbonado, Is.EqualTo(2150));
+        Assert.That(tarjeta.ViajesDelMes, Is.EqualTo(1));
+        Assert.That(tarjeta.MesViajesFrecuentes, Is.EqualTo(new DateTime(2026, 11, 1)));
+    }
+
+    [Test]
+    public void EmitirBoleto_UsoFrecuente_NoReiniciaLaCuentaDentroDelMismoMes()
+    {
+        var (colectivo, tarjeta, reloj) = UsoFrecuente(30);
+        reloj.Avanzar(TimeSpan.FromDays(20));
+
+        var boleto = colectivo.EmitirBoleto(tarjeta);
+
+        Assert.That(boleto!.TotalAbonado, Is.EqualTo(1720));
+        Assert.That(tarjeta.ViajesDelMes, Is.EqualTo(31));
+    }
+
+    [Test]
+    public void EmitirBoleto_UsoFrecuente_ReiniciaLaCuentaCuandoCambiaElAnioConElMismoMes()
+    {
+        var (colectivo, tarjeta, reloj) = UsoFrecuente(100);
+        reloj.Avanzar(TimeSpan.FromDays(365));
+
+        var boleto = colectivo.EmitirBoleto(tarjeta);
+
+        Assert.That(boleto!.TotalAbonado, Is.EqualTo(2150));
+        Assert.That(tarjeta.ViajesDelMes, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void EmitirBoleto_UsoFrecuente_ElPrimerViajeInicializaElMes()
+    {
+        var reloj = new RelojFalso(new DateTimeOffset(2026, 10, 5, 10, 0, 0, TimeSpan.Zero));
+        var colectivo = new Colectivo { Tiempo = reloj };
+        var tarjeta = new Tarjeta { Saldo = 5000 };
+
+        colectivo.EmitirBoleto(tarjeta);
+
+        Assert.That(tarjeta.MesViajesFrecuentes, Is.EqualTo(new DateTime(2026, 10, 1)));
+        Assert.That(tarjeta.ViajesDelMes, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void EmitirBoleto_UsoFrecuente_NoContaNiDescuentaSiElPagoEsRechazado()
+    {
+        var (colectivo, tarjeta, _) = UsoFrecuente(30);
+        tarjeta.Saldo = -2000;
+
+        var boleto = colectivo.EmitirBoleto(tarjeta);
+
+        Assert.That(boleto, Is.Null);
+        Assert.That(tarjeta.ViajesDelMes, Is.EqualTo(30));
+    }
+
+    [TestCase(TarjetaTipo.MedioBoletoEstudiantilId, 1075)]
+    [TestCase(TarjetaTipo.BoletoGratuitoEstudiantilId, 0)]
+    [TestCase(TarjetaTipo.FranquiciaCompletaId, 0)]
+    public void EmitirBoleto_UsoFrecuente_NoAplicaAOtrosTiposDeTarjeta(int tipoId, int esperado)
+    {
+        var tipo = TarjetaTipo.Predefinidos.Single(t => t.Id == tipoId);
+        var (colectivo, tarjeta, _) = UsoFrecuente(100, tipo);
+
+        var boleto = colectivo.EmitirBoleto(tarjeta);
+
+        Assert.That(boleto!.TotalAbonado, Is.EqualTo(esperado));
+        Assert.That(tarjeta.ViajesDelMes, Is.EqualTo(100));
+    }
+
+    [Test]
+    public void EmitirBoleto_UsoFrecuente_ElBoletoInformaElMontoConDescuento()
+    {
+        var (colectivo, tarjeta, _) = UsoFrecuente(40);
+
+        var boleto = colectivo.EmitirBoleto(tarjeta);
+
+        Assert.That(boleto!.TotalAbonado, Is.EqualTo(1720));
+        Assert.That(boleto.Saldo, Is.EqualTo(56000 - 1720));
+    }
 }

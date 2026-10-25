@@ -23,6 +23,9 @@ public class Tarjeta
     public int ViajesMedioBoletoHoy { get; set; }
     public int ViajesGratuitosHoy { get; set; }
     public bool EsMedioBoleto => (TarjetaTipo ?? TarjetaSube.Clases.TarjetaTipo.Normal).Id == TarjetaSube.Clases.TarjetaTipo.MedioBoletoEstudiantilId;
+    public DateTime? MesViajesFrecuentes { get; set; }
+    public int ViajesDelMes { get; set; }
+    public bool EsNormal => (TarjetaTipo ?? TarjetaSube.Clases.TarjetaTipo.Normal).Id == TarjetaSube.Clases.TarjetaTipo.NormalId;
     public bool EsBoletoGratuito => (TarjetaTipo ?? TarjetaSube.Clases.TarjetaTipo.Normal).Id == TarjetaSube.Clases.TarjetaTipo.BoletoGratuitoEstudiantilId;
     public bool Cargar(decimal monto)
     {
