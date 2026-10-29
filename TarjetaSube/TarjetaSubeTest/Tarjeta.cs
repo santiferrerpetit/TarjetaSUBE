@@ -281,4 +281,72 @@ public class TarjetaTests
         Assert.That(tarjeta.Saldo, Is.EqualTo(51000));
         Assert.That(tarjeta.SaldoPendiente, Is.EqualTo(0));
     }
+
+    [Test]
+    public void TarjetaNueva_NoTieneViajeParaTrasbordo()
+    {
+        var tarjeta = new Tarjeta();
+
+        Assert.That(tarjeta.FechaUltimoPago, Is.Null);
+        Assert.That(tarjeta.LineaUltimoViaje, Is.Null);
+    }
+
+    [Test]
+    public void PagarCon_RegistraLaFechaYLaLineaDelUltimoPago()
+    {
+        var ahora = new DateTimeOffset(2026, 10, 5, 10, 0, 0, TimeSpan.Zero);
+        var colectivo = new Colectivo { Linea = "K", Tiempo = new RelojFalso(ahora) };
+        var tarjeta = new Tarjeta { Saldo = 5000 };
+
+        colectivo.PagarCon(tarjeta);
+
+        Assert.That(tarjeta.FechaUltimoPago, Is.EqualTo(ahora.DateTime));
+        Assert.That(tarjeta.LineaUltimoViaje, Is.EqualTo("K"));
+    }
+
+    [Test]
+    public void PagarCon_PagoRechazadoNoRegistraElUltimoPago()
+    {
+        var colectivo = new Colectivo { Linea = "K" };
+        var tarjeta = new Tarjeta { Saldo = -2000 };
+
+        colectivo.PagarCon(tarjeta);
+
+        Assert.That(tarjeta.FechaUltimoPago, Is.Null);
+        Assert.That(tarjeta.LineaUltimoViaje, Is.Null);
+    }
+
+    [Test]
+    public void PagarCon_UnTrasbordoActualizaLaLineaPeroNoLaFechaDelUltimoPago()
+    {
+        var inicio = new DateTimeOffset(2026, 10, 5, 10, 0, 0, TimeSpan.Zero);
+        var reloj = new RelojFalso(inicio);
+        var a = new Colectivo { Linea = "K", Tiempo = reloj };
+        var b = new Colectivo { Linea = "145", Tiempo = reloj };
+        var tarjeta = new Tarjeta { Saldo = 5000 };
+
+        a.PagarCon(tarjeta);
+        reloj.Avanzar(TimeSpan.FromMinutes(15));
+        b.PagarCon(tarjeta);
+
+        Assert.That(tarjeta.FechaUltimoPago, Is.EqualTo(inicio.DateTime));
+        Assert.That(tarjeta.LineaUltimoViaje, Is.EqualTo("145"));
+    }
+
+    [Test]
+    public void PagarCon_UnTrasbordoNoModificaSaldoNiSaldoPendiente()
+    {
+        var reloj = new RelojFalso(new DateTimeOffset(2026, 10, 5, 10, 0, 0, TimeSpan.Zero));
+        var a = new Colectivo { Linea = "K", Tiempo = reloj };
+        var b = new Colectivo { Linea = "145", Tiempo = reloj };
+        var tarjeta = new Tarjeta { Saldo = 5000 };
+
+        a.PagarCon(tarjeta);
+        var saldo = tarjeta.Saldo;
+        reloj.Avanzar(TimeSpan.FromMinutes(15));
+        b.PagarCon(tarjeta);
+
+        Assert.That(tarjeta.Saldo, Is.EqualTo(saldo));
+        Assert.That(tarjeta.SaldoPendiente, Is.EqualTo(0));
+    }
 }
