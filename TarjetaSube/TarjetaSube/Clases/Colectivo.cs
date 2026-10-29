@@ -14,6 +14,9 @@ public class Colectivo
 
     private const int TarifaUrbana = 2150;
     private const int TarifaInterurbana = 3000;
+    private const int HoraInicioTrasbordos = 7;
+    private const int HoraFinTrasbordos = 22;
+    private static readonly TimeSpan PlazoTrasbordo = TimeSpan.FromHours(1);
     private const int HoraInicioFranquicias = 6;
     private const int HoraFinFranquicias = 22;
     private const int ViajesParaDescuentoMedio = 30;
@@ -32,6 +35,12 @@ public class Colectivo
 
         if (!tarjeta.EsNormal && !EnHorarioDeFranquicia(ahora))
             return null;
+
+        if (EsTrasbordo(tarjeta, ahora))
+        {
+            tarjeta.LineaUltimoViaje = Linea;
+            return CrearBoleto(tarjeta, ahora, 0, esTrasbordo: true);
+        }
 
         if (tarjeta.EsMedioBoleto)
         {
@@ -71,6 +80,9 @@ public class Colectivo
         if (!tarjeta.Descontar(monto))
             return null;
 
+        tarjeta.FechaUltimoPago = ahora;
+        tarjeta.LineaUltimoViaje = Linea;
+
         if (tarjeta.EsNormal)
             tarjeta.ViajesDelMes++;
 
@@ -86,18 +98,30 @@ public class Colectivo
             tarjeta.ViajesGratuitosHoy++;
         }
 
-        return new Boleto
-        {
-            Fecha = ahora,
-            TipoTarjeta = tarjeta.NombreTipo,
-            Linea = Linea,
-            TotalAbonado = monto + deudaPrevia,
-            Saldo = tarjeta.Saldo,
-            IdTarjeta = tarjeta.Id,
-            Tarjeta = tarjeta,
-            Colectivo = this
-        };
+        return CrearBoleto(tarjeta, ahora, monto + deudaPrevia);
     }
+
+    private Boleto CrearBoleto(Tarjeta tarjeta, DateTime fecha, decimal totalAbonado, bool esTrasbordo = false) => new()
+    {
+        Fecha = fecha,
+        TipoTarjeta = tarjeta.NombreTipo,
+        Linea = Linea,
+        TotalAbonado = totalAbonado,
+        Saldo = tarjeta.Saldo,
+        IdTarjeta = tarjeta.Id,
+        Tarjeta = tarjeta,
+        Colectivo = this,
+        EsTrasbordo = esTrasbordo
+    };
+
+    private bool EsTrasbordo(Tarjeta tarjeta, DateTime ahora) =>
+        tarjeta.FechaUltimoPago is { } ultimoPago
+        && tarjeta.LineaUltimoViaje != Linea
+        && ahora >= ultimoPago
+        && ahora - ultimoPago <= PlazoTrasbordo
+        && ahora.DayOfWeek is >= DayOfWeek.Monday and <= DayOfWeek.Saturday
+        && ahora.Hour >= HoraInicioTrasbordos
+        && ahora.Hour < HoraFinTrasbordos;
 
     private static decimal MultiplicadorUsoFrecuente(int viaje) => viaje switch
     {

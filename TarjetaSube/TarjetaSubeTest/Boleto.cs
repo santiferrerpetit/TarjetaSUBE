@@ -316,4 +316,54 @@ public class BoletoTests
             Assert.That(db.Colectivos.Single(c => c.Linea == "K").EsInterurbana, Is.False);
         }
     }
+
+    [Test]
+    public void EmitirBoleto_ViajeComun_NoEsTrasbordo()
+    {
+        var boleto = NuevoColectivo().EmitirBoleto(new Tarjeta { Saldo = 5000 });
+
+        Assert.That(boleto!.EsTrasbordo, Is.False);
+    }
+
+    [Test]
+    public void EmitirBoleto_Trasbordo_CompletaTodosLosDatosSinCobrar()
+    {
+        var reloj = new RelojFalso(Ahora);
+        var primera = new Colectivo { Linea = "144 Negro", Tiempo = reloj };
+        var segunda = new Colectivo { Linea = "K", Tiempo = reloj };
+        var tarjeta = new Tarjeta { Id = 7, Saldo = 5000 };
+
+        primera.EmitirBoleto(tarjeta);
+        reloj.Avanzar(TimeSpan.FromMinutes(20));
+        var boleto = segunda.EmitirBoleto(tarjeta);
+
+        Assert.That(boleto!.EsTrasbordo, Is.True);
+        Assert.That(boleto.Fecha, Is.EqualTo(Ahora.DateTime.AddMinutes(20)));
+        Assert.That(boleto.TipoTarjeta, Is.EqualTo("Normal"));
+        Assert.That(boleto.Linea, Is.EqualTo("K"));
+        Assert.That(boleto.TotalAbonado, Is.EqualTo(0));
+        Assert.That(boleto.Saldo, Is.EqualTo(2850));
+        Assert.That(boleto.IdTarjeta, Is.EqualTo(7));
+    }
+
+    [Test]
+    public void Boleto_SePersisteIndicandoSiEsTrasbordo()
+    {
+        var opciones = new DbContextOptionsBuilder<TarjetaSubeDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+
+        using (var db = new TarjetaSubeDbContext(opciones))
+        {
+            db.Boletos.Add(new Boleto { Linea = "K", EsTrasbordo = true });
+            db.Boletos.Add(new Boleto { Linea = "144 Negro" });
+            db.SaveChanges();
+        }
+
+        using (var db = new TarjetaSubeDbContext(opciones))
+        {
+            Assert.That(db.Boletos.Single(b => b.Linea == "K").EsTrasbordo, Is.True);
+            Assert.That(db.Boletos.Single(b => b.Linea == "144 Negro").EsTrasbordo, Is.False);
+        }
+    }
 }
