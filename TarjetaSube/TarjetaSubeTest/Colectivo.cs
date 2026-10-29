@@ -515,4 +515,95 @@ public class ColectivoTests
 
         Assert.That(colectivo.PagarCon(tarjeta), Is.True);
     }
+
+    // Líneas interurbanas
+
+    [Test]
+    public void EmitirBoleto_LineaInterurbana_CobraLaTarifaInterurbana()
+    {
+        var colectivo = new Colectivo { Linea = "Gálvez", EsInterurbana = true };
+        var tarjeta = new Tarjeta { Saldo = 10000 };
+
+        var boleto = colectivo.EmitirBoleto(tarjeta);
+
+        Assert.That(boleto!.TotalAbonado, Is.EqualTo(3000));
+        Assert.That(tarjeta.Saldo, Is.EqualTo(7000));
+    }
+
+    [Test]
+    public void EmitirBoleto_LineaUrbana_NoEsInterurbanaPorDefecto()
+    {
+        var colectivo = new Colectivo();
+
+        Assert.That(colectivo.EsInterurbana, Is.False);
+    }
+
+    [Test]
+    public void EmitirBoleto_LineaInterurbana_MedioBoletoPagaLaMitad()
+    {
+        var colectivo = new Colectivo { EsInterurbana = true, Tiempo = new RelojFalso(new DateTimeOffset(2026, 10, 5, 10, 0, 0, TimeSpan.Zero)) };
+        var tarjeta = TarjetaDeTipo(TarjetaTipo.MedioBoletoEstudiantilId);
+
+        var boleto = colectivo.EmitirBoleto(tarjeta);
+
+        Assert.That(boleto!.TotalAbonado, Is.EqualTo(1500));
+    }
+
+    [Test]
+    public void EmitirBoleto_LineaInterurbana_MedioBoletoPagaTarifaCompletaInterurbanaDesdeElTercerViaje()
+    {
+        var reloj = new RelojFalso(new DateTimeOffset(2026, 10, 5, 10, 0, 0, TimeSpan.Zero));
+        var colectivo = new Colectivo { EsInterurbana = true, Tiempo = reloj };
+        var tarjeta = TarjetaDeTipo(TarjetaTipo.MedioBoletoEstudiantilId);
+
+        colectivo.PagarCon(tarjeta);
+        reloj.Avanzar(TimeSpan.FromMinutes(5));
+        colectivo.PagarCon(tarjeta);
+        reloj.Avanzar(TimeSpan.FromMinutes(5));
+        var tercero = colectivo.EmitirBoleto(tarjeta);
+
+        Assert.That(tercero!.TotalAbonado, Is.EqualTo(3000));
+    }
+
+    [TestCase(TarjetaTipo.BoletoGratuitoEstudiantilId)]
+    [TestCase(TarjetaTipo.FranquiciaCompletaId)]
+    public void EmitirBoleto_LineaInterurbana_FranquiciasGratuitasNoPagan(int tipoId)
+    {
+        var colectivo = new Colectivo { EsInterurbana = true, Tiempo = new RelojFalso(new DateTimeOffset(2026, 10, 5, 10, 0, 0, TimeSpan.Zero)) };
+        var tarjeta = TarjetaDeTipo(tipoId);
+
+        var boleto = colectivo.EmitirBoleto(tarjeta);
+
+        Assert.That(boleto!.TotalAbonado, Is.EqualTo(0));
+        Assert.That(tarjeta.Saldo, Is.EqualTo(10000));
+    }
+
+    [Test]
+    public void PagarCon_LineaInterurbana_LasFranquiciasSiguenLaFranjaHoraria()
+    {
+        var colectivo = new Colectivo { EsInterurbana = true, Tiempo = new RelojFalso(new DateTimeOffset(2026, 10, 10, 10, 0, 0, TimeSpan.Zero)) };
+
+        Assert.That(colectivo.PagarCon(TarjetaDeTipo(TarjetaTipo.FranquiciaCompletaId)), Is.False);
+    }
+
+    [Test]
+    public void EmitirBoleto_LineaInterurbana_AplicaUsoFrecuenteSobreLaTarifaInterurbana()
+    {
+        var (_, tarjeta, reloj) = UsoFrecuente(40);
+        var colectivo = new Colectivo { EsInterurbana = true, Tiempo = reloj };
+
+        var boleto = colectivo.EmitirBoleto(tarjeta);
+
+        Assert.That(boleto!.TotalAbonado, Is.EqualTo(2400));
+    }
+
+    [Test]
+    public void EmitirBoleto_LineaInterurbana_RechazaSiNoAlcanzaElSaldoNegativoMaximo()
+    {
+        var colectivo = new Colectivo { EsInterurbana = true };
+        var tarjeta = new Tarjeta { Saldo = 900 };
+
+        Assert.That(colectivo.PagarCon(tarjeta), Is.False);
+        Assert.That(tarjeta.Saldo, Is.EqualTo(900));
+    }
 }

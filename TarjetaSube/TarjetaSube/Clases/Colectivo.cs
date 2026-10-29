@@ -10,13 +10,18 @@ public class Colectivo
     [NotMapped]
     public TimeProvider Tiempo { get; set; } = TimeProvider.System;
 
-    private const int Tarifa = 2150;
+    public bool EsInterurbana { get; set; }
+
+    private const int TarifaUrbana = 2150;
+    private const int TarifaInterurbana = 3000;
     private const int HoraInicioFranquicias = 6;
     private const int HoraFinFranquicias = 22;
     private const int ViajesParaDescuentoMedio = 30;
     private const int ViajesParaDescuentoMaximo = 80;
     private const decimal MultiplicadorDescuentoMedio = 0.8m;
     private const decimal MultiplicadorDescuentoMaximo = 0.75m;
+
+    private int Tarifa => EsInterurbana ? TarifaInterurbana : TarifaUrbana;
 
     public bool PagarCon(Tarjeta tarjeta) => EmitirBoleto(tarjeta) != null;
 
