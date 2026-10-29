@@ -264,4 +264,56 @@ public class BoletoTests
             Assert.That(guardado.IdTarjeta, Is.EqualTo(7));
         }
     }
+
+    [Test]
+    public void EmitirBoleto_LineaInterurbana_CompletaTodosLosDatosConLaTarifaInterurbana()
+    {
+        var colectivo = new Colectivo { Linea = "Gálvez", EsInterurbana = true, Tiempo = new RelojFalso(Ahora) };
+        var tarjeta = new Tarjeta { Id = 7, Saldo = 5000 };
+
+        var boleto = colectivo.EmitirBoleto(tarjeta);
+
+        Assert.That(boleto, Is.Not.Null);
+        Assert.That(boleto!.Fecha, Is.EqualTo(Ahora.DateTime));
+        Assert.That(boleto.TipoTarjeta, Is.EqualTo("Normal"));
+        Assert.That(boleto.Linea, Is.EqualTo("Gálvez"));
+        Assert.That(boleto.TotalAbonado, Is.EqualTo(3000));
+        Assert.That(boleto.Saldo, Is.EqualTo(2000));
+        Assert.That(boleto.IdTarjeta, Is.EqualTo(7));
+    }
+
+    [Test]
+    public void EmitirBoleto_LineaInterurbana_RechazadoPorSaldoNoEmiteBoleto()
+    {
+        var colectivo = new Colectivo { Linea = "Baigorria", EsInterurbana = true, Tiempo = new RelojFalso(Ahora) };
+
+        Assert.That(colectivo.EmitirBoleto(new Tarjeta { Saldo = 900 }), Is.Null);
+    }
+
+    [Test]
+    public void Colectivo_EsUrbanoPorDefecto()
+    {
+        Assert.That(new Colectivo().EsInterurbana, Is.False);
+    }
+
+    [Test]
+    public void Colectivo_SePersisteSiEsInterurbano()
+    {
+        var opciones = new DbContextOptionsBuilder<TarjetaSubeDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+
+        using (var db = new TarjetaSubeDbContext(opciones))
+        {
+            db.Colectivos.Add(new Colectivo { Linea = "Gálvez", EsInterurbana = true });
+            db.Colectivos.Add(new Colectivo { Linea = "K" });
+            db.SaveChanges();
+        }
+
+        using (var db = new TarjetaSubeDbContext(opciones))
+        {
+            Assert.That(db.Colectivos.Single(c => c.Linea == "Gálvez").EsInterurbana, Is.True);
+            Assert.That(db.Colectivos.Single(c => c.Linea == "K").EsInterurbana, Is.False);
+        }
+    }
 }
