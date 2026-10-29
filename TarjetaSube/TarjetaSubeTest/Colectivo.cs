@@ -515,4 +515,247 @@ public class ColectivoTests
 
         Assert.That(colectivo.PagarCon(tarjeta), Is.True);
     }
+
+    // Trasbordos. 2026-10-05 es lunes y 2026-10-10 sábado.
+
+    private static (Colectivo a, Colectivo b, RelojFalso reloj) DosLineas(int dia = 5, int hora = 10)
+    {
+        var reloj = new RelojFalso(new DateTimeOffset(2026, 10, dia, hora, 0, 0, TimeSpan.Zero));
+        return (new Colectivo { Linea = "K", Tiempo = reloj }, new Colectivo { Linea = "145", Tiempo = reloj }, reloj);
+    }
+
+    [Test]
+    public void EmitirBoleto_Trasbordo_EntreLineasDistintasDentroDeLaHoraEsGratisYSeIndicaEnElBoleto()
+    {
+        var (a, b, reloj) = DosLineas();
+        var tarjeta = new Tarjeta { Saldo = 10000 };
+
+        var primero = a.EmitirBoleto(tarjeta);
+        reloj.Avanzar(TimeSpan.FromMinutes(30));
+        var segundo = b.EmitirBoleto(tarjeta);
+
+        Assert.That(primero!.EsTrasbordo, Is.False);
+        Assert.That(segundo!.EsTrasbordo, Is.True);
+        Assert.That(segundo.TotalAbonado, Is.EqualTo(0));
+        Assert.That(segundo.Linea, Is.EqualTo("145"));
+        Assert.That(tarjeta.Saldo, Is.EqualTo(10000 - 2150));
+        Assert.That(segundo.Saldo, Is.EqualTo(10000 - 2150));
+    }
+
+    [Test]
+    public void EmitirBoleto_Trasbordo_NoHayEnLaMismaLinea()
+    {
+        var (a, _, reloj) = DosLineas();
+        var tarjeta = new Tarjeta { Saldo = 10000 };
+
+        a.PagarCon(tarjeta);
+        reloj.Avanzar(TimeSpan.FromMinutes(10));
+        var segundo = a.EmitirBoleto(tarjeta);
+
+        Assert.That(segundo!.EsTrasbordo, Is.False);
+        Assert.That(tarjeta.Saldo, Is.EqualTo(10000 - 2150 - 2150));
+    }
+
+    [Test]
+    public void EmitirBoleto_Trasbordo_PasadaUnaHoraSeCobraNormal()
+    {
+        var (a, b, reloj) = DosLineas();
+        var tarjeta = new Tarjeta { Saldo = 10000 };
+
+        a.PagarCon(tarjeta);
+        reloj.Avanzar(TimeSpan.FromMinutes(61));
+        var segundo = b.EmitirBoleto(tarjeta);
+
+        Assert.That(segundo!.EsTrasbordo, Is.False);
+        Assert.That(segundo.TotalAbonado, Is.EqualTo(2150));
+    }
+
+    [Test]
+    public void EmitirBoleto_Trasbordo_EnElLimiteDeUnaHoraSigueSiendoGratis()
+    {
+        var (a, b, reloj) = DosLineas();
+        var tarjeta = new Tarjeta { Saldo = 10000 };
+
+        a.PagarCon(tarjeta);
+        reloj.Avanzar(TimeSpan.FromHours(1));
+
+        Assert.That(b.EmitirBoleto(tarjeta)!.EsTrasbordo, Is.True);
+    }
+
+    [Test]
+    public void EmitirBoleto_Trasbordo_NoHayLimiteDeCantidadDentroDeLaHora()
+    {
+        var (a, b, reloj) = DosLineas();
+        var tarjeta = new Tarjeta { Saldo = 10000 };
+
+        a.PagarCon(tarjeta);
+        for (var i = 0; i < 4; i++)
+        {
+            reloj.Avanzar(TimeSpan.FromMinutes(10));
+            var destino = i % 2 == 0 ? b : a;
+            Assert.That(destino.EmitirBoleto(tarjeta)!.EsTrasbordo, Is.True);
+        }
+
+        Assert.That(tarjeta.Saldo, Is.EqualTo(10000 - 2150));
+    }
+
+    [Test]
+    public void EmitirBoleto_Trasbordo_LaHoraSeCuentaDesdeElUltimoBoletoPagadoNoDesdeElTrasbordo()
+    {
+        var (a, b, reloj) = DosLineas();
+        var tarjeta = new Tarjeta { Saldo = 10000 };
+
+        a.PagarCon(tarjeta);
+        reloj.Avanzar(TimeSpan.FromMinutes(50));
+        b.PagarCon(tarjeta);
+        reloj.Avanzar(TimeSpan.FromMinutes(20));
+        var tercero = a.EmitirBoleto(tarjeta);
+
+        Assert.That(tercero!.EsTrasbordo, Is.False);
+        Assert.That(tercero.TotalAbonado, Is.EqualTo(2150));
+    }
+
+    [Test]
+    public void EmitirBoleto_Trasbordo_UnTrasbordoNoCuentaParaElUsoFrecuente()
+    {
+        var (a, b, reloj) = DosLineas();
+        var tarjeta = new Tarjeta { Saldo = 10000 };
+
+        a.PagarCon(tarjeta);
+        reloj.Avanzar(TimeSpan.FromMinutes(10));
+        b.PagarCon(tarjeta);
+
+        Assert.That(tarjeta.ViajesDelMes, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void EmitirBoleto_Trasbordo_PuedeHacerseElSabado()
+    {
+        var (a, b, reloj) = DosLineas(dia: 10);
+        var tarjeta = new Tarjeta { Saldo = 10000 };
+
+        a.PagarCon(tarjeta);
+        reloj.Avanzar(TimeSpan.FromMinutes(10));
+
+        Assert.That(b.EmitirBoleto(tarjeta)!.EsTrasbordo, Is.True);
+    }
+
+    [Test]
+    public void EmitirBoleto_Trasbordo_NoPuedeHacerseElDomingo()
+    {
+        var (a, b, reloj) = DosLineas(dia: 11);
+        var tarjeta = new Tarjeta { Saldo = 10000 };
+
+        a.PagarCon(tarjeta);
+        reloj.Avanzar(TimeSpan.FromMinutes(10));
+
+        Assert.That(b.EmitirBoleto(tarjeta)!.EsTrasbordo, Is.False);
+        Assert.That(tarjeta.Saldo, Is.EqualTo(10000 - 2150 - 2150));
+    }
+
+    [Test]
+    public void EmitirBoleto_Trasbordo_NoPuedeHacerseAntesDeLas7()
+    {
+        var reloj = new RelojFalso(new DateTimeOffset(2026, 10, 5, 6, 30, 0, TimeSpan.Zero));
+        var a = new Colectivo { Linea = "K", Tiempo = reloj };
+        var b = new Colectivo { Linea = "145", Tiempo = reloj };
+        var tarjeta = new Tarjeta { Saldo = 10000 };
+
+        a.PagarCon(tarjeta);
+        reloj.Avanzar(TimeSpan.FromMinutes(10));
+
+        Assert.That(b.EmitirBoleto(tarjeta)!.EsTrasbordo, Is.False);
+    }
+
+    [Test]
+    public void EmitirBoleto_Trasbordo_PuedeHacerseDesdeLas7EnPunto()
+    {
+        var reloj = new RelojFalso(new DateTimeOffset(2026, 10, 5, 6, 55, 0, TimeSpan.Zero));
+        var a = new Colectivo { Linea = "K", Tiempo = reloj };
+        var b = new Colectivo { Linea = "145", Tiempo = reloj };
+        var tarjeta = new Tarjeta { Saldo = 10000 };
+
+        a.PagarCon(tarjeta);
+        reloj.Avanzar(TimeSpan.FromMinutes(5));
+
+        Assert.That(b.EmitirBoleto(tarjeta)!.EsTrasbordo, Is.True);
+    }
+
+    [Test]
+    public void EmitirBoleto_Trasbordo_PuedeHacerseALas2159()
+    {
+        var reloj = new RelojFalso(new DateTimeOffset(2026, 10, 5, 21, 40, 0, TimeSpan.Zero));
+        var a = new Colectivo { Linea = "K", Tiempo = reloj };
+        var b = new Colectivo { Linea = "145", Tiempo = reloj };
+        var tarjeta = new Tarjeta { Saldo = 10000 };
+
+        a.PagarCon(tarjeta);
+        reloj.Avanzar(TimeSpan.FromMinutes(19));
+
+        Assert.That(b.EmitirBoleto(tarjeta)!.EsTrasbordo, Is.True);
+    }
+
+    [Test]
+    public void EmitirBoleto_Trasbordo_NoPuedeHacerseALas22EnPunto()
+    {
+        var reloj = new RelojFalso(new DateTimeOffset(2026, 10, 5, 21, 40, 0, TimeSpan.Zero));
+        var a = new Colectivo { Linea = "K", Tiempo = reloj };
+        var b = new Colectivo { Linea = "145", Tiempo = reloj };
+        var tarjeta = new Tarjeta { Saldo = 10000 };
+
+        a.PagarCon(tarjeta);
+        reloj.Avanzar(TimeSpan.FromMinutes(20));
+
+        Assert.That(b.EmitirBoleto(tarjeta)!.EsTrasbordo, Is.False);
+    }
+
+    [Test]
+    public void EmitirBoleto_Trasbordo_SinViajePreviosNoHayTrasbordo()
+    {
+        var (_, b, _) = DosLineas();
+        var tarjeta = new Tarjeta { Saldo = 10000 };
+
+        Assert.That(b.EmitirBoleto(tarjeta)!.EsTrasbordo, Is.False);
+    }
+
+    [Test]
+    public void EmitirBoleto_Trasbordo_FuncionaConSaldoNegativoSinAgregarDeuda()
+    {
+        var (a, b, reloj) = DosLineas();
+        var tarjeta = new Tarjeta { Saldo = 500 };
+
+        a.PagarCon(tarjeta);
+        reloj.Avanzar(TimeSpan.FromMinutes(5));
+        var trasbordo = b.EmitirBoleto(tarjeta);
+
+        Assert.That(trasbordo!.EsTrasbordo, Is.True);
+        Assert.That(trasbordo.TotalAbonado, Is.EqualTo(0));
+        Assert.That(tarjeta.Saldo, Is.EqualTo(500 - 2150));
+    }
+
+    [Test]
+    public void EmitirBoleto_Trasbordo_SeAplicaAUnaFranquiciaDentroDeSuHorario()
+    {
+        var (a, b, reloj) = DosLineas();
+        var tarjeta = TarjetaDeTipo(TarjetaTipo.MedioBoletoEstudiantilId);
+
+        a.PagarCon(tarjeta);
+        reloj.Avanzar(TimeSpan.FromMinutes(10));
+        var segundo = b.EmitirBoleto(tarjeta);
+
+        Assert.That(segundo!.EsTrasbordo, Is.True);
+        Assert.That(tarjeta.Saldo, Is.EqualTo(10000 - 1075));
+    }
+
+    [Test]
+    public void EmitirBoleto_Trasbordo_UnaFranquiciaSigueSinPoderViajarFueraDeLaFranja()
+    {
+        var (a, b, reloj) = DosLineas(dia: 10);
+        var tarjeta = TarjetaDeTipo(TarjetaTipo.MedioBoletoEstudiantilId);
+
+        a.PagarCon(tarjeta);
+        reloj.Avanzar(TimeSpan.FromMinutes(10));
+
+        Assert.That(b.EmitirBoleto(tarjeta), Is.Null);
+    }
 }

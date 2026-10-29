@@ -20,6 +20,8 @@ public class Tarjeta
     public string NombreTipo => (TarjetaTipo ?? TarjetaSube.Clases.TarjetaTipo.Normal).Nombre;
     
     public DateTime? UltimoViaje { get; set; }
+    public DateTime? FechaUltimoPago { get; set; }
+    public string? LineaUltimoViaje { get; set; }
     public int ViajesMedioBoletoHoy { get; set; }
     public int ViajesGratuitosHoy { get; set; }
     public bool EsMedioBoleto => (TarjetaTipo ?? TarjetaSube.Clases.TarjetaTipo.Normal).Id == TarjetaSube.Clases.TarjetaTipo.MedioBoletoEstudiantilId;
