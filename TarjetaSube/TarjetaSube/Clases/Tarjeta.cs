@@ -20,6 +20,8 @@ public class Tarjeta
     public string NombreTipo => (TarjetaTipo ?? TarjetaSube.Clases.TarjetaTipo.Normal).Nombre;
     
     public DateTime? UltimoViaje { get; set; }
+    public DateTime? BiciRetiradaEn { get; set; }
+    public decimal MultasBiciPendientes { get; set; }
     public DateTime? FechaUltimoPago { get; set; }
     public string? LineaUltimoViaje { get; set; }
     public int ViajesMedioBoletoHoy { get; set; }
